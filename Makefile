@@ -7,7 +7,7 @@ DART := $(if $(FVM_FLUTTER_SDK),$(FVM_FLUTTER_SDK)/bin/dart,dart)
 
 PROJECT_NAME := ios_window_control_layout
 EXAMPLE_DIR := example
-IOS_PROJECT := $(EXAMPLE_DIR)/ios/Runner.xcodeproj
+IOS_WORKSPACE := $(EXAMPLE_DIR)/ios/Runner.xcworkspace
 IOS_SCHEME := Runner
 MARKDOWNLINT_VERSION := 0.22.1
 NPM_CACHE := $(CURDIR)/.dart_tool/npm-cache
@@ -95,7 +95,7 @@ test-ios:
 		exit 1; \
 	fi; \
 	xcodebuild test \
-		-project $(IOS_PROJECT) \
+		-workspace $(IOS_WORKSPACE) \
 		-scheme $(IOS_SCHEME) \
 		-destination "platform=iOS Simulator,id=$$DEVICE_ID" \
 		-derivedDataPath /tmp/$(PROJECT_NAME)-derived-data \
