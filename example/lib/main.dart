@@ -5,6 +5,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:ios_window_control_layout/ios_window_control_layout.dart';
 
+const _toolbarEdgePadding = 16.0;
+
 void main() {
   runApp(const ExampleApp());
 }
@@ -35,14 +37,18 @@ class _ExamplePage extends StatefulWidget {
 
 class _ExamplePageState extends State<_ExamplePage> {
   _AppBarStyle _style = _AppBarStyle.cupertino;
+  bool _applyWindowControlLayout = true;
 
   @override
   Widget build(BuildContext context) {
     final data = IosWindowControlLayout.of(context);
+    final avoidance = _applyWindowControlLayout
+        ? data.horizontalAvoidance
+        : EdgeInsetsDirectional.zero;
     return Scaffold(
       appBar: switch (_style) {
-        _AppBarStyle.material => _buildMaterialAppBar(context, data),
-        _AppBarStyle.cupertino => _buildCupertinoAppBar(context, data),
+        _AppBarStyle.material => _buildMaterialAppBar(context, avoidance),
+        _AppBarStyle.cupertino => _buildCupertinoAppBar(context, avoidance),
       },
       body: SafeArea(
         top: false,
@@ -81,6 +87,18 @@ class _ExamplePageState extends State<_ExamplePage> {
                 ),
               ),
             ),
+            SwitchListTile(
+              key: const ValueKey('apply-window-control-layout-switch'),
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Apply window control layout'),
+              subtitle: const Text(
+                'Add the reported avoidance to the toolbar controls',
+              ),
+              value: _applyWindowControlLayout,
+              onChanged: (value) {
+                setState(() => _applyWindowControlLayout = value);
+              },
+            ),
             const SizedBox(height: 24),
             Text(
               data.isAvailable
@@ -89,12 +107,13 @@ class _ExamplePageState extends State<_ExamplePage> {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            Text('Horizontal avoidance: ${data.horizontalAvoidance}'),
+            Text('Reported horizontal avoidance: ${data.horizontalAvoidance}'),
+            Text('Applied horizontal avoidance: $avoidance'),
             Text('Vertical avoidance: ${data.verticalAvoidance}'),
             const SizedBox(height: 24),
             _InsetsPreview(
               title: 'Horizontal avoidance preview',
-              insets: data.horizontalAvoidance,
+              insets: avoidance,
               color: Colors.indigo,
             ),
             const SizedBox(height: 16),
@@ -117,39 +136,48 @@ class _ExamplePageState extends State<_ExamplePage> {
 
   PreferredSizeWidget _buildMaterialAppBar(
     BuildContext context,
-    IosWindowControlLayoutData data,
+    EdgeInsetsDirectional avoidance,
   ) {
-    return _HorizontalAvoidanceAppBar(
-      avoidance: data.horizontalAvoidance,
-      child: AppBar(
-        leading: IconButton(
+    return AppBar(
+      centerTitle: true,
+      leadingWidth: kToolbarHeight + _toolbarEdgePadding + avoidance.start,
+      leading: Padding(
+        padding: EdgeInsetsDirectional.only(
+          start: _toolbarEdgePadding + avoidance.start,
+        ),
+        child: IconButton(
           key: const ValueKey('material-leading'),
           tooltip: 'Leading test button',
           onPressed: () {},
           icon: const Icon(Icons.menu),
         ),
-        title: const Text('Material'),
-        actions: [
-          IconButton(
+      ),
+      title: const Text('Material'),
+      actions: [
+        Padding(
+          padding: EdgeInsetsDirectional.only(
+            end: _toolbarEdgePadding + avoidance.end,
+          ),
+          child: IconButton(
+            key: const ValueKey('material-trailing'),
             tooltip: 'Refresh layout',
             onPressed: () => unawaited(IosWindowControlLayout.refresh(context)),
             icon: const Icon(Icons.refresh),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   PreferredSizeWidget _buildCupertinoAppBar(
     BuildContext context,
-    IosWindowControlLayoutData data,
+    EdgeInsetsDirectional avoidance,
   ) {
-    final avoidance = data.horizontalAvoidance;
     return CupertinoNavigationBar(
       automaticallyImplyLeading: false,
       padding: EdgeInsetsDirectional.only(
-        start: 16 + avoidance.start,
-        end: 16 + avoidance.end,
+        start: _toolbarEdgePadding + avoidance.start,
+        end: _toolbarEdgePadding + avoidance.end,
       ),
       leading: CupertinoButton(
         key: const ValueKey('cupertino-leading'),
@@ -169,38 +197,6 @@ class _ExamplePageState extends State<_ExamplePage> {
   void _selectStyle(_AppBarStyle style) {
     if (_style == style) return;
     setState(() => _style = style);
-  }
-}
-
-class _HorizontalAvoidanceAppBar extends StatelessWidget
-    implements PreferredSizeWidget {
-  const _HorizontalAvoidanceAppBar({
-    required this.avoidance,
-    required this.child,
-  });
-
-  final EdgeInsetsDirectional avoidance;
-  final PreferredSizeWidget child;
-
-  @override
-  Size get preferredSize => child.preferredSize;
-
-  @override
-  Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    final resolved = avoidance.resolve(Directionality.of(context));
-    final padding = mediaQuery.padding;
-    return MediaQuery(
-      data: mediaQuery.copyWith(
-        padding: EdgeInsets.fromLTRB(
-          padding.left + resolved.left,
-          padding.top,
-          padding.right + resolved.right,
-          padding.bottom,
-        ),
-      ),
-      child: child,
-    );
   }
 }
 

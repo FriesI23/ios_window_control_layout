@@ -9,5 +9,6 @@ config:
 
 globs:
   - README.md
+  - README_zh.md
   - CHANGELOG.md
   - example/README.md
