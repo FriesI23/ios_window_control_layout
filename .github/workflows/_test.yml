@@ -1,0 +1,45 @@
+name: Test CI
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  quality:
+    name: Dart, Markdown, and package checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Run checks
+        run: make check CI=1
+      - name: Validate package
+        run: make publish-check
+
+  ios-test:
+    name: iOS tests
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Resolve dependencies
+        run: make bootstrap
+      - name: Run iOS XCTest
+        run: make test-ios CI=1
+      - name: Select the integration-test simulator
+        run: |
+          DEVICE_ID=$(xcrun simctl list devices available iPhone \
+            | awk '/^-- iOS (2[6-9]|[3-9][0-9])/{eligible=1; next} eligible' \
+            | grep -m 1 -o '[A-F0-9]\{8\}-[A-F0-9]\{4\}-[A-F0-9]\{4\}-[A-F0-9]\{4\}-[A-F0-9]\{12\}')
+          test -n "$DEVICE_ID"
+          xcrun simctl boot "$DEVICE_ID" || true
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+          echo "DEVICE_ID=$DEVICE_ID" >> "$GITHUB_ENV"
+      - name: Run iOS integration tests
+        run: make test-integration DEVICE="$DEVICE_ID" CI=1

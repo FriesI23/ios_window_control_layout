@@ -2,26 +2,45 @@ import Flutter
 import UIKit
 import XCTest
 
-
 @testable import ios_window_control_layout
 
-// This demonstrates a simple unit test of the Swift portion of this plugin's implementation.
-//
-// See https://developer.apple.com/documentation/xctest for more information about using XCTest.
-
 class RunnerTests: XCTestCase {
-
-  func testGetPlatformVersion() {
+  func testMissingViewReturnsStableError() {
     let plugin = IosWindowControlLayoutPlugin()
+    let call = FlutterMethodCall(methodName: "queryLayout", arguments: nil)
 
-    let call = FlutterMethodCall(methodName: "getPlatformVersion", arguments: [])
-
-    let resultExpectation = expectation(description: "result block must be called.")
+    let resultExpectation = expectation(description: "result block must be called")
     plugin.handle(call) { result in
-      XCTAssertEqual(result as! String, "iOS " + UIDevice.current.systemVersion)
+      if #available(iOS 26.0, *) {
+        let error = result as? FlutterError
+        XCTAssertEqual(error?.code, "view_unavailable")
+      } else {
+        let layout = result as? [String: Any]
+        XCTAssertEqual(layout?["isAvailable"] as? Bool, false)
+      }
       resultExpectation.fulfill()
     }
     waitForExpectations(timeout: 1)
   }
 
+  func testPureQueryUsesDirectionalEdges() {
+    let payload = IosWindowControlLayoutPlugin.queryLayout(
+      baseMargins: NSDirectionalEdgeInsets(
+        top: 1,
+        leading: 2,
+        bottom: 3,
+        trailing: 4
+      ),
+      horizontalMargins: .zero,
+      verticalMargins: .zero
+    )
+    let layout = payload.encode()
+
+    XCTAssertEqual(layout["isAvailable"] as? Bool, true)
+    let base = layout["baseMargins"] as? [String: Double]
+    XCTAssertEqual(base?["start"], 2)
+    XCTAssertEqual(base?["top"], 1)
+    XCTAssertEqual(base?["end"], 4)
+    XCTAssertEqual(base?["bottom"], 3)
+  }
 }

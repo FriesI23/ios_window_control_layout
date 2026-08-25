@@ -1,11 +1,19 @@
 name: ios_window_control_layout
 description: "Expose iOS window-control-aware layout margins to Flutter."
-version: 0.0.1
-homepage:
+version: 0.1.0
+homepage: https://github.com/FriesI23/ios_window_control_layout
+repository: https://github.com/FriesI23/ios_window_control_layout
+issue_tracker: https://github.com/FriesI23/ios_window_control_layout/issues
+
+topics:
+  - ios
+  - ipados
+  - window-management
+  - adaptive-layout
 
 environment:
-  sdk: ^3.11.5
-  flutter: '>=3.3.0'
+  sdk: '>=3.11.0 <4.0.0'
+  flutter: '>=3.41.0'
 
 dependencies:
   flutter:

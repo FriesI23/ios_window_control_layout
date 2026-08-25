@@ -1,0 +1,13 @@
+config:
+  MD013: false
+  MD024:
+    siblings_only: true
+  MD033:
+    allowed_elements:
+      - details
+      - summary
+
+globs:
+  - README.md
+  - CHANGELOG.md
+  - example/README.md

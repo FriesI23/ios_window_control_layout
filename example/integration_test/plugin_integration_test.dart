@@ -1,24 +1,18 @@
-// This is a basic Flutter integration test.
-//
-// Since integration tests run in a full Flutter application, they can interact
-// with the host side of a plugin implementation, unlike Dart unit tests.
-//
-// For more information about Flutter integration tests, please see
-// https://flutter.dev/to/integration-testing
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-
 import 'package:ios_window_control_layout/ios_window_control_layout.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('getPlatformVersion test', (WidgetTester tester) async {
-    final IosWindowControlLayout plugin = IosWindowControlLayout();
-    final String? version = await plugin.getPlatformVersion();
-    // The version string depends on the host platform running the test, so
-    // just assert that some non-empty string is returned.
-    expect(version?.isNotEmpty, true);
+  testWidgets('queries a layout snapshot', (tester) async {
+    final data = await IosWindowControlLayout.query();
+
+    expect(data, isA<IosWindowControlLayoutData>());
+    expect(data.isAvailable, isTrue);
+    expect(data.baseMargins.start.isFinite, isTrue);
+    expect(data.baseMargins.end.isFinite, isTrue);
+    expect(data.horizontalAvoidance.start.isFinite, isTrue);
+    expect(data.horizontalAvoidance.end.isFinite, isTrue);
   });
 }
