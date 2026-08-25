@@ -22,10 +22,10 @@ MACHINE_OUT ?=
 # Optional simulator override for iOS XCTest and integration tests.
 DEVICE ?=
 
-DART_DIRS := lib test $(EXAMPLE_DIR)/lib $(EXAMPLE_DIR)/test \
+DART_DIRS := lib test tool $(EXAMPLE_DIR)/lib $(EXAMPLE_DIR)/test \
              $(EXAMPLE_DIR)/integration_test
 
-.PHONY: help bootstrap format format-check fix analyze mdlint test \
+.PHONY: help bootstrap format format-check fix analyze mdlint sync-version test \
         test-ios test-integration publish-check check aio aio-full
 
 help:
@@ -37,6 +37,7 @@ help:
 	@echo "  fix              Apply Dart fixes, then format"
 	@echo "  analyze          Run Flutter static analysis"
 	@echo "  mdlint           Lint maintained Markdown files"
+	@echo "  sync-version     Sync pubspec version to the iOS podspec"
 	@echo "  test             Run Flutter unit and widget tests"
 	@echo "  publish-check    Validate the pub.dev package without publishing"
 	@echo "  check            Run formatting, lint, analysis, and tests"
@@ -67,6 +68,10 @@ analyze:
 mdlint:
 	@npm_config_cache=$(NPM_CACHE) \
 		npx --yes markdownlint-cli2@$(MARKDOWNLINT_VERSION)
+
+sync-version:
+	@VERSION=$$($(DART) run tool/sync_version.dart) && \
+		echo "Synced podspec version to $$VERSION"
 
 test:
 ifneq ($(MACHINE_OUT),)

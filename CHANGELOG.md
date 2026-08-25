@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1
+
+- Improve the Material and Cupertino examples with an opt-out comparison
+  switch and correct toolbar spacing.
+- Add before-and-after screenshots and a Chinese README.
+
 ## 0.1.0
 
 - Add iOS 26 corner-adapted margin queries backed by `UIView.LayoutRegion`.

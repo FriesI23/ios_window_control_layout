@@ -2,7 +2,6 @@
 
 ![Package][pubdev-package]
 ![Likes][pubdev-likes]
-![Popularity][pubdev-popularity]
 ![Points][pubdev-points]
 
 EN / [中文](README_zh.md)
@@ -210,7 +209,6 @@ SOFTWARE.
 
 [pubdev-package]: https://img.shields.io/pub/v/ios_window_control_layout.svg
 [pubdev-likes]: https://img.shields.io/pub/likes/ios_window_control_layout?logo=dart
-[pubdev-popularity]: https://img.shields.io/pub/popularity/ios_window_control_layout?logo=dart
 [pubdev-points]: https://img.shields.io/pub/points/ios_window_control_layout?logo=dart
 [buymeacoffee-badge]: https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black
 [alipay-badge]: https://img.shields.io/badge/alipay-00A1E9?style=for-the-badge&logo=alipay&logoColor=white
