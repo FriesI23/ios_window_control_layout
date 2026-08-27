@@ -42,7 +42,17 @@ void main() {
 
     expect(find.byKey(const ValueKey('material-leading')), findsOneWidget);
     expect(find.byKey(const ValueKey('cupertino-leading')), findsNothing);
+    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await tester.pumpAndSettle();
     expect(find.text('Horizontal avoidance preview'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('flutter-safe-area-color')),
+      findsOneWidget,
+    );
+    final floatingControl = tester.widget<Opacity>(
+      find.byKey(const ValueKey('uikit-floating-control')),
+    );
+    expect(floatingControl.opacity, 0.85);
   });
 
   testWidgets('keeps the Material title centered with baseline edge padding', (
@@ -96,11 +106,14 @@ Future<void> _pumpExample(WidgetTester tester) async {
 }
 
 Map<String, Object> _layoutPayload() => <String, Object>{
-  'schemaVersion': 1,
+  'schemaVersion': 2,
   'isAvailable': true,
   'baseMargins': _insets(0, 0, 0, 0),
   'horizontalMargins': _insets(80, 0, 20, 0),
   'verticalMargins': _insets(0, 0, 0, 0),
+  'baseSafeArea': _insets(0, 0, 0, 12),
+  'horizontalSafeArea': _insets(24, 0, 24, 28),
+  'verticalSafeArea': _insets(0, 0, 0, 0),
 };
 
 Map<String, double> _insets(

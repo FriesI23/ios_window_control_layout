@@ -54,48 +54,77 @@ final class LayoutPayload {
     required this.baseMargins,
     required this.horizontalMargins,
     required this.verticalMargins,
+    required this.baseSafeArea,
+    required this.horizontalSafeArea,
+    required this.verticalSafeArea,
   });
 
   factory LayoutPayload.decode(Object? value) {
     final map = _expectMap(value, 'payload');
-    final version = map['schemaVersion'];
+    final version = map[_schemaVersionField];
     if (version is! int || version != schemaVersion) {
-      throw _invalidData('Unsupported schemaVersion: $version.');
+      throw _invalidData('Unsupported $_schemaVersionField: $version.');
     }
-    final isAvailable = map['isAvailable'];
+    final isAvailable = map[_isAvailableField];
     if (isAvailable is! bool) {
-      throw _invalidData('Expected a boolean isAvailable value.');
+      throw _invalidData('Expected a boolean $_isAvailableField value.');
     }
 
     return LayoutPayload(
       isAvailable: isAvailable,
       baseMargins: DirectionalInsetsPayload.decode(
-        map['baseMargins'],
-        'baseMargins',
+        map[_baseMarginsField],
+        _baseMarginsField,
       ),
       horizontalMargins: DirectionalInsetsPayload.decode(
-        map['horizontalMargins'],
-        'horizontalMargins',
+        map[_horizontalMarginsField],
+        _horizontalMarginsField,
       ),
       verticalMargins: DirectionalInsetsPayload.decode(
-        map['verticalMargins'],
-        'verticalMargins',
+        map[_verticalMarginsField],
+        _verticalMarginsField,
+      ),
+      baseSafeArea: DirectionalInsetsPayload.decode(
+        map[_baseSafeAreaField],
+        _baseSafeAreaField,
+      ),
+      horizontalSafeArea: DirectionalInsetsPayload.decode(
+        map[_horizontalSafeAreaField],
+        _horizontalSafeAreaField,
+      ),
+      verticalSafeArea: DirectionalInsetsPayload.decode(
+        map[_verticalSafeAreaField],
+        _verticalSafeAreaField,
       ),
     );
   }
 
-  static const schemaVersion = 1;
+  static const schemaVersion = 2;
+  static const _schemaVersionField = 'schemaVersion';
+  static const _isAvailableField = 'isAvailable';
+  static const _baseMarginsField = 'baseMargins';
+  static const _horizontalMarginsField = 'horizontalMargins';
+  static const _verticalMarginsField = 'verticalMargins';
+  static const _baseSafeAreaField = 'baseSafeArea';
+  static const _horizontalSafeAreaField = 'horizontalSafeArea';
+  static const _verticalSafeAreaField = 'verticalSafeArea';
 
   final bool isAvailable;
   final DirectionalInsetsPayload baseMargins;
   final DirectionalInsetsPayload horizontalMargins;
   final DirectionalInsetsPayload verticalMargins;
+  final DirectionalInsetsPayload baseSafeArea;
+  final DirectionalInsetsPayload horizontalSafeArea;
+  final DirectionalInsetsPayload verticalSafeArea;
 
   IosWindowControlLayoutData toLayoutData() => IosWindowControlLayoutData(
     isAvailable: isAvailable,
     baseMargins: baseMargins.toInsets(),
     horizontalMargins: horizontalMargins.toInsets(),
     verticalMargins: verticalMargins.toInsets(),
+    baseSafeArea: baseSafeArea.toInsets(),
+    horizontalSafeArea: horizontalSafeArea.toInsets(),
+    verticalSafeArea: verticalSafeArea.toInsets(),
   );
 }
 

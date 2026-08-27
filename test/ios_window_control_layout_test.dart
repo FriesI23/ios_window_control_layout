@@ -35,6 +35,9 @@ void main() {
       baseMargins: EdgeInsetsDirectional.fromSTEB(16, 12, 20, 8),
       horizontalMargins: EdgeInsetsDirectional.fromSTEB(72, 10, 18, 8),
       verticalMargins: EdgeInsetsDirectional.fromSTEB(16, 52, 20, 6),
+      baseSafeArea: EdgeInsetsDirectional.fromSTEB(4, 6, 8, 10),
+      horizontalSafeArea: EdgeInsetsDirectional.fromSTEB(34, 4, 6, 10),
+      verticalSafeArea: EdgeInsetsDirectional.fromSTEB(2, 46, 8, 8),
     );
 
     expect(
@@ -50,11 +53,31 @@ void main() {
       data.horizontalAvoidance.resolve(TextDirection.rtl),
       const EdgeInsets.only(right: 56),
     );
+    expect(
+      data.horizontalSafeAreaAvoidance,
+      const EdgeInsetsDirectional.fromSTEB(30, 0, 0, 0),
+    );
+    expect(
+      data.verticalSafeAreaAvoidance,
+      const EdgeInsetsDirectional.fromSTEB(0, 40, 0, 0),
+    );
   });
 
   test('zero data is unavailable and has no avoidance', () {
     expect(IosWindowControlLayoutData.zero.isAvailable, isFalse);
     expect(IosWindowControlLayoutData.zero.hasAvoidance, isFalse);
+    expect(
+      IosWindowControlLayoutData.zero.baseSafeArea,
+      EdgeInsetsDirectional.zero,
+    );
+    expect(
+      IosWindowControlLayoutData.zero.horizontalSafeAreaAvoidance,
+      EdgeInsetsDirectional.zero,
+    );
+    expect(
+      IosWindowControlLayoutData.zero.verticalSafeAreaAvoidance,
+      EdgeInsetsDirectional.zero,
+    );
   });
 
   test('data has value equality', () {
@@ -63,16 +86,39 @@ void main() {
       baseMargins: EdgeInsetsDirectional.all(8),
       horizontalMargins: EdgeInsetsDirectional.all(16),
       verticalMargins: EdgeInsetsDirectional.all(24),
+      baseSafeArea: EdgeInsetsDirectional.all(4),
+      horizontalSafeArea: EdgeInsetsDirectional.all(12),
+      verticalSafeArea: EdgeInsetsDirectional.all(20),
     );
     const second = IosWindowControlLayoutData(
       isAvailable: true,
       baseMargins: EdgeInsetsDirectional.all(8),
       horizontalMargins: EdgeInsetsDirectional.all(16),
       verticalMargins: EdgeInsetsDirectional.all(24),
+      baseSafeArea: EdgeInsetsDirectional.all(4),
+      horizontalSafeArea: EdgeInsetsDirectional.all(12),
+      verticalSafeArea: EdgeInsetsDirectional.all(20),
     );
 
     expect(first, second);
     expect(first.hashCode, second.hashCode);
+    expect(
+      first,
+      isNot(
+        const IosWindowControlLayoutData(
+          isAvailable: true,
+          baseMargins: EdgeInsetsDirectional.all(8),
+          horizontalMargins: EdgeInsetsDirectional.all(16),
+          verticalMargins: EdgeInsetsDirectional.all(24),
+          baseSafeArea: EdgeInsetsDirectional.all(5),
+          horizontalSafeArea: EdgeInsetsDirectional.all(12),
+          verticalSafeArea: EdgeInsetsDirectional.all(20),
+        ),
+      ),
+    );
+    expect(first.toString(), contains('baseSafeArea:'));
+    expect(first.toString(), contains('horizontalSafeArea:'));
+    expect(first.toString(), contains('verticalSafeArea:'));
   });
 
   test('low-level query delegates to the platform implementation', () async {
@@ -94,6 +140,9 @@ void main() {
       baseMargins: EdgeInsetsDirectional.all(8),
       horizontalMargins: EdgeInsetsDirectional.fromSTEB(40, 8, 8, 8),
       verticalMargins: EdgeInsetsDirectional.fromSTEB(8, 40, 8, 8),
+      baseSafeArea: EdgeInsetsDirectional.all(4),
+      horizontalSafeArea: EdgeInsetsDirectional.fromSTEB(24, 4, 4, 4),
+      verticalSafeArea: EdgeInsetsDirectional.all(4),
     );
     var queryCount = 0;
     IosWindowControlLayoutPlatform.instance = _FakePlatform(() async {
@@ -104,11 +153,11 @@ void main() {
     await tester.pumpWidget(
       const MaterialApp(home: IosWindowControlLayout(child: _LayoutValue())),
     );
-    expect(find.text('false:0.0'), findsOneWidget);
+    expect(find.text('false:0.0:0.0'), findsOneWidget);
 
     await tester.pump();
     expect(queryCount, 1);
-    expect(find.text('true:32.0'), findsOneWidget);
+    expect(find.text('true:32.0:20.0'), findsOneWidget);
   });
 
   testWidgets('explicit refresh coalesces calls in the same microtask', (
@@ -323,6 +372,9 @@ class _LayoutValue extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = IosWindowControlLayout.of(context);
-    return Text('${data.isAvailable}:${data.horizontalAvoidance.start}');
+    return Text(
+      '${data.isAvailable}:${data.horizontalAvoidance.start}:'
+      '${data.horizontalSafeAreaAvoidance.start}',
+    );
   }
 }

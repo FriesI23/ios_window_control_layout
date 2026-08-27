@@ -7,8 +7,8 @@
 EN / [中文](README_zh.md)
 
 > **Keep Flutter content clear of iPadOS window controls** using UIKit's
-> corner-adapted layout margins while retaining ownership of your AppBar,
-> sidebar, and padding decisions.
+> corner-adapted margins and safe areas while retaining ownership of your
+> AppBar, floating controls, sidebar, and padding decisions.
 
 ## Screenshots
 
@@ -56,6 +56,7 @@ Read the current snapshot during build:
 ```dart
 final layout = IosWindowControlLayout.of(context);
 final toolbarInsets = layout.horizontalAvoidance;
+final floatingControlInsets = layout.horizontalSafeArea;
 ```
 
 `of` and `maybeOf` establish an inherited dependency. `read` and `maybeRead`
@@ -73,9 +74,19 @@ For one-off access without adding the widget to the tree:
 final layout = await IosWindowControlLayout.query();
 ```
 
-Avoidance values are additional space, not replacements for a component's
-ordinary padding. Keep the component's baseline padding and add the avoidance
-to it, as in the complete example below.
+Layout margins suit ordinary content and window-control avoidance. Safe-area
+regions suit floating controls placed near real device or window corners. Use
+`horizontalSafeArea` or `verticalSafeArea` directly when the component needs
+the raw adapted safe area.
+
+Avoidance values are additional space, not replacements for ordinary padding
+or safe-area insets. Margin avoidance is `adapted margins - base margins`;
+safe-area avoidance is `adapted safe area - base safe area`. Negative values
+are clamped to zero. Keep the baseline and add avoidance only when the baseline
+is already applied, as in the complete example below.
+
+All six regions belong to one immutable snapshot and refresh together. iOS
+versions before 26 and other platforms return zero values.
 
 <details>
 <summary>Complete example</summary>
@@ -106,6 +117,7 @@ class ExamplePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final layout = IosWindowControlLayout.of(context);
     final avoidance = layout.horizontalAvoidance;
+    final floatingSafeArea = layout.horizontalSafeArea;
 
     return Scaffold(
       appBar: AppBar(
@@ -140,6 +152,19 @@ class ExamplePage extends StatelessWidget {
         ),
         child: Center(
           child: Text('Available: ${layout.isAvailable}'),
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: EdgeInsetsDirectional.only(
+          start: floatingSafeArea.start,
+          end: floatingSafeArea.end,
+          bottom: floatingSafeArea.bottom,
+        ),
+        child: const Card(
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Text('Floating controls'),
+          ),
         ),
       ),
     );

@@ -41,19 +41,25 @@ struct DirectionalInsetsPayload {
 /// Versioned payload containing only StandardMessageCodec-compatible values.
 /// Keep this structure synchronized with Dart's `LayoutPayload`.
 struct LayoutPayload {
-    static let schemaVersion = 1
+    static let schemaVersion = 2
 
     static let unavailable = LayoutPayload(
         isAvailable: false,
         baseMargins: DirectionalInsetsPayload(.zero),
         horizontalMargins: DirectionalInsetsPayload(.zero),
-        verticalMargins: DirectionalInsetsPayload(.zero)
+        verticalMargins: DirectionalInsetsPayload(.zero),
+        baseSafeArea: DirectionalInsetsPayload(.zero),
+        horizontalSafeArea: DirectionalInsetsPayload(.zero),
+        verticalSafeArea: DirectionalInsetsPayload(.zero)
     )
 
     let isAvailable: Bool
     let baseMargins: DirectionalInsetsPayload
     let horizontalMargins: DirectionalInsetsPayload
     let verticalMargins: DirectionalInsetsPayload
+    let baseSafeArea: DirectionalInsetsPayload
+    let horizontalSafeArea: DirectionalInsetsPayload
+    let verticalSafeArea: DirectionalInsetsPayload
 
     func encode() -> [String: Any] {
         [
@@ -62,6 +68,9 @@ struct LayoutPayload {
             "baseMargins": baseMargins.encode(),
             "horizontalMargins": horizontalMargins.encode(),
             "verticalMargins": verticalMargins.encode(),
+            "baseSafeArea": baseSafeArea.encode(),
+            "horizontalSafeArea": horizontalSafeArea.encode(),
+            "verticalSafeArea": verticalSafeArea.encode(),
         ]
     }
 }

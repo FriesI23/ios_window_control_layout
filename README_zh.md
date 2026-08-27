@@ -7,8 +7,8 @@
 [EN](README.md) / 中文
 
 > **让 Flutter 内容避开 iPadOS 窗口控制按钮** — 使用 UIKit 提供的
-> corner-adapted layout margins，同时由应用自行决定 AppBar、侧边栏和
-> padding 的具体布局。
+> corner-adapted margins 与 safe areas，同时由应用自行决定 AppBar、
+> 浮动控件、侧边栏和 padding 的具体布局。
 
 ## 截图
 
@@ -56,6 +56,7 @@ IosWindowControlLayout(
 ```dart
 final layout = IosWindowControlLayout.of(context);
 final toolbarInsets = layout.horizontalAvoidance;
+final floatingControlInsets = layout.horizontalSafeArea;
 ```
 
 `of` 和 `maybeOf` 会建立 inherited dependency；`read` 和 `maybeRead`
@@ -72,8 +73,17 @@ await IosWindowControlLayout.refresh(context);
 final layout = await IosWindowControlLayout.query();
 ```
 
-Avoidance 表示需要额外增加的空间，不会替代组件原有的 padding。应保留组件的
-常规 padding，再叠加 avoidance，如下面的完整示例所示。
+Layout margins 适合普通内容与 window-control avoidance；safe-area regions
+适合靠近真实设备或窗口圆角的浮动控件。如果组件需要完整的 adapted safe area，
+可以直接使用 `horizontalSafeArea` 或 `verticalSafeArea`。
+
+Avoidance 表示相对普通区域增加的部分，不会替代原有 padding 或 safe-area
+insets。Margin avoidance 为 `adapted margins - base margins`；safe-area
+avoidance 为 `adapted safe area - base safe area`，负值会 clamp 为零。如果布局
+已经应用 baseline，再叠加 avoidance，如下面的完整示例所示。
+
+六组 region 位于同一个 immutable snapshot 中并同步刷新。iOS 26 以下与其他
+平台均返回 zero。
 
 <details>
 <summary>完整示例</summary>
@@ -104,6 +114,7 @@ class ExamplePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final layout = IosWindowControlLayout.of(context);
     final avoidance = layout.horizontalAvoidance;
+    final floatingSafeArea = layout.horizontalSafeArea;
 
     return Scaffold(
       appBar: AppBar(
@@ -138,6 +149,19 @@ class ExamplePage extends StatelessWidget {
         ),
         child: Center(
           child: Text('Available: ${layout.isAvailable}'),
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: EdgeInsetsDirectional.only(
+          start: floatingSafeArea.start,
+          end: floatingSafeArea.end,
+          bottom: floatingSafeArea.bottom,
+        ),
+        child: const Card(
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Text('Floating controls'),
+          ),
         ),
       ),
     );

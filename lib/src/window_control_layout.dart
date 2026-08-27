@@ -5,7 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'layout_data.dart';
 import 'platform.dart';
 
-/// Provides UIKit's corner-adapted layout margins to its descendants.
+/// Provides UIKit's corner-adapted margins and safe areas to descendants.
 ///
 /// The layout refreshes after its first frame, when Flutter reports new window
 /// metrics, and when the application resumes. Call [refresh] when an
@@ -54,7 +54,7 @@ class IosWindowControlLayout extends StatefulWidget {
     return inherited!.refresh();
   }
 
-  /// Queries the layout margins for the current Flutter view.
+  /// Queries the layout margins and safe areas for the current Flutter view.
   ///
   /// Unsupported platforms and iOS versions before iOS 26 return
   /// [IosWindowControlLayoutData.zero]. Native integration failures are

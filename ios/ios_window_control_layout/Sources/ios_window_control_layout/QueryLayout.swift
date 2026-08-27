@@ -26,6 +26,13 @@ extension IosWindowControlLayoutPlugin {
             ),
             verticalMargins: view.directionalEdgeInsets(
                 for: .margins(cornerAdaptation: .vertical)
+            ),
+            baseSafeArea: view.directionalEdgeInsets(for: .safeArea()),
+            horizontalSafeArea: view.directionalEdgeInsets(
+                for: .safeArea(cornerAdaptation: .horizontal)
+            ),
+            verticalSafeArea: view.directionalEdgeInsets(
+                for: .safeArea(cornerAdaptation: .vertical)
             )
         )
         result(payload.encode())
@@ -34,13 +41,19 @@ extension IosWindowControlLayoutPlugin {
     static func queryLayout(
         baseMargins: NSDirectionalEdgeInsets,
         horizontalMargins: NSDirectionalEdgeInsets,
-        verticalMargins: NSDirectionalEdgeInsets
+        verticalMargins: NSDirectionalEdgeInsets,
+        baseSafeArea: NSDirectionalEdgeInsets,
+        horizontalSafeArea: NSDirectionalEdgeInsets,
+        verticalSafeArea: NSDirectionalEdgeInsets
     ) -> LayoutPayload {
         LayoutPayload(
             isAvailable: true,
             baseMargins: DirectionalInsetsPayload(baseMargins),
             horizontalMargins: DirectionalInsetsPayload(horizontalMargins),
-            verticalMargins: DirectionalInsetsPayload(verticalMargins)
+            verticalMargins: DirectionalInsetsPayload(verticalMargins),
+            baseSafeArea: DirectionalInsetsPayload(baseSafeArea),
+            horizontalSafeArea: DirectionalInsetsPayload(horizontalSafeArea),
+            verticalSafeArea: DirectionalInsetsPayload(verticalSafeArea)
         )
     }
 }

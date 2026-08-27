@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Add iOS 26 corner-adapted safe-area layout regions and directional
+  safe-area avoidance values.
+- Upgrade the native wire payload to schema version 2 while preserving the
+  existing margin APIs and refresh behavior.
+
 ## 0.1.1
 
 - Improve the Material and Cupertino examples with an opt-out comparison

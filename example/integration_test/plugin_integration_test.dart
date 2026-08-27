@@ -14,5 +14,9 @@ void main() {
     expect(data.baseMargins.end.isFinite, isTrue);
     expect(data.horizontalAvoidance.start.isFinite, isTrue);
     expect(data.horizontalAvoidance.end.isFinite, isTrue);
+    expect(data.baseSafeArea.start.isFinite, isTrue);
+    expect(data.baseSafeArea.end.isFinite, isTrue);
+    expect(data.horizontalSafeAreaAvoidance.start.isFinite, isTrue);
+    expect(data.verticalSafeAreaAvoidance.bottom.isFinite, isTrue);
   });
 }

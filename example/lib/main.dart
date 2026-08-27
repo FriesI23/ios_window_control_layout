@@ -42,8 +42,17 @@ class _ExamplePageState extends State<_ExamplePage> {
   @override
   Widget build(BuildContext context) {
     final data = IosWindowControlLayout.of(context);
+    final flutterSafeArea = MediaQuery.paddingOf(context);
     final avoidance = _applyWindowControlLayout
         ? data.horizontalAvoidance
+        : EdgeInsetsDirectional.zero;
+    final floatingSafeArea = _applyWindowControlLayout
+        ? EdgeInsetsDirectional.fromSTEB(
+            data.horizontalSafeArea.start,
+            data.verticalSafeArea.top,
+            data.horizontalSafeArea.end,
+            data.verticalSafeArea.bottom,
+          )
         : EdgeInsetsDirectional.zero;
     return Scaffold(
       appBar: switch (_style) {
@@ -110,6 +119,9 @@ class _ExamplePageState extends State<_ExamplePage> {
             Text('Reported horizontal avoidance: ${data.horizontalAvoidance}'),
             Text('Applied horizontal avoidance: $avoidance'),
             Text('Vertical avoidance: ${data.verticalAvoidance}'),
+            Text('Adapted safe area: ${data.horizontalSafeArea}'),
+            Text('Safe-area avoidance: ${data.horizontalSafeAreaAvoidance}'),
+            Text('Flutter safe area: $flutterSafeArea'),
             const SizedBox(height: 24),
             _InsetsPreview(
               title: 'Horizontal avoidance preview',
@@ -129,6 +141,42 @@ class _ExamplePageState extends State<_ExamplePage> {
               'that both remain outside the system window controls.',
             ),
           ],
+        ),
+      ),
+      bottomNavigationBar: ColoredBox(
+        key: const ValueKey('flutter-safe-area-color'),
+        color: Colors.orange.withValues(alpha: 0.35),
+        child: SafeArea(
+          top: false,
+          left: false,
+          right: false,
+          child: ColoredBox(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: Padding(
+              padding: EdgeInsetsDirectional.only(
+                start: floatingSafeArea.start,
+                end: floatingSafeArea.end,
+                bottom: math.max(
+                  0,
+                  floatingSafeArea.bottom - flutterSafeArea.bottom,
+                ),
+              ),
+              child: Opacity(
+                key: const ValueKey('uikit-floating-control'),
+                opacity: 0.85,
+                child: Card(
+                  margin: const EdgeInsets.all(12),
+                  child: const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                      'Floating controls use UIKit corner-adapted safe areas',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
