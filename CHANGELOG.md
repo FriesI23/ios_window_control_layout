@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
 - Add iOS 26 corner-adapted safe-area layout regions and directional
   safe-area avoidance values.

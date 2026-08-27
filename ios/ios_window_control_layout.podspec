@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'ios_window_control_layout'
-  s.version          = '0.1.1'
+  s.version          = '0.2.0'
   s.summary          = 'Expose iOS window-control-aware layout margins to Flutter.'
   s.description      = <<-DESC
 Expose iOS window-control-aware layout margins to Flutter.
