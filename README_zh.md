@@ -57,6 +57,7 @@ IosWindowControlLayout(
 final layout = IosWindowControlLayout.of(context);
 final toolbarInsets = layout.horizontalAvoidance;
 final floatingControlInsets = layout.horizontalSafeArea;
+final windowCorners = layout.effectiveCornerRadii;
 ```
 
 `of` 和 `maybeOf` 会建立 inherited dependency；`read` 和 `maybeRead`
@@ -73,26 +74,53 @@ await IosWindowControlLayout.refresh(context);
 final layout = await IosWindowControlLayout.query();
 ```
 
-Layout margins 适合普通内容与 window-control avoidance；safe-area regions
-适合靠近真实设备或窗口圆角的浮动控件。如果组件需要完整的 adapted safe area，
-可以直接使用 `horizontalSafeArea` 或 `verticalSafeArea`。
+### 布局属性
 
-Avoidance 表示相对普通区域增加的部分，不会替代原有 padding 或 safe-area
-insets。Margin avoidance 为 `adapted margins - base margins`；safe-area
-avoidance 为 `adapted safe area - base safe area`，负值会 clamp 为零。如果布局
-已经应用 baseline，再叠加 avoidance，如下面的完整示例所示。
+| 属性 | 用途 |
+| --- | --- |
+| `isAvailable` | 判断当前窗口是否能提供 iOS 26 的布局参考；为 `false` 时继续使用应用原有布局即可。 |
+| `baseMargins` | UIKit 常规的内容边距，代表不考虑特殊圆角时的标准内容区。 |
+| `horizontalMargins` | 已照顾左右圆角的内容区，适合 AppBar 两侧操作、导航控件、侧边栏和靠窗口两侧对齐的内容。 |
+| `verticalMargins` | 已照顾上下圆角的内容区，适合靠近窗口顶部或底部排布的内容。 |
+| `baseSafeArea` | UIKit 常规的安全区，适合在 Flutter 内容需要与周边 iOS 界面保持一致时作为原生参考。 |
+| `horizontalSafeArea` | 适合放置在左右两侧的浮动操作，例如悬浮按钮、边缘工具条或窗口侧边的快捷控件。 |
+| `verticalSafeArea` | 适合放置在顶部或底部的浮动控件，例如浮动底栏、工具栏或 dock。 |
+| `effectiveCornerRadii` | 当前窗口四个物理圆角的实际弧度，适合让卡片、浮动控件或自定义形状只跟随邻近的圆角。 |
+| `horizontalAvoidance` | 左右圆角额外需要让出的空间，可直接叠加到 AppBar、侧边栏或已有的水平 padding 上。 |
+| `verticalAvoidance` | 上下圆角额外需要让出的空间，适合在常规内容边距已经存在时叠加使用。 |
+| `horizontalSafeAreaAvoidance` | 左右两侧额外需要的安全距离，适合已经放在 Flutter 常规安全区内的浮动控件。 |
+| `verticalSafeAreaAvoidance` | 顶部或底部额外需要的安全距离，适合已经由 `SafeArea` 保护的顶部或底部控件。 |
+| `hasAvoidance` | 快速判断当前窗口的圆角是否让常规内容区产生了额外留白。 |
 
-六组 region 位于同一个 immutable snapshot 中并同步刷新。iOS 26 以下与其他
-平台均返回 zero。
+Margin 类数值更适合普通内容，safe-area 类数值更适合靠近设备或
+窗口圆角的浮动可交互控件。完整区域值可以直接作为布局参考；
+`Avoidance` 值只表示在原有布局上需要再增加的部分。Inset 仍然描述的是
+矩形根 view；如果控件只需要跟随邻近的物理圆角，使用
+`effectiveCornerRadii` 会更合适。
+
+所有数值都属于同一份不可变布局快照，并会一起刷新。iOS 26 以下与
+其他平台均返回零值。
 
 <details>
 <summary>完整示例</summary>
 
 ```dart
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:ios_window_control_layout/ios_window_control_layout.dart';
 
 const _edgePadding = 16.0;
+const _bottomControlMargin = 12.0;
+
+double _horizontalInsetAt(Radius radius, double distanceFromBottom) {
+  if (radius.x <= 0 || radius.y <= 0 || distanceFromBottom >= radius.y) {
+    return 0;
+  }
+  final normalizedY = (radius.y - distanceFromBottom) / radius.y;
+  return radius.x *
+      (1 - math.sqrt(math.max(0, 1 - normalizedY * normalizedY)));
+}
 
 void main() => runApp(const ExampleApp());
 
@@ -114,7 +142,25 @@ class ExamplePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final layout = IosWindowControlLayout.of(context);
     final avoidance = layout.horizontalAvoidance;
-    final floatingSafeArea = layout.horizontalSafeArea;
+    final flutterSafeArea = MediaQuery.viewPaddingOf(context);
+    final adaptedBottom = math.max(
+      flutterSafeArea.bottom,
+      layout.verticalSafeArea.bottom,
+    );
+    final cornerDistance = adaptedBottom + _bottomControlMargin;
+    final bottomPadding = EdgeInsets.only(
+      left: math.max(
+        0,
+        _horizontalInsetAt(layout.effectiveCornerRadii.bottomLeft, cornerDistance) -
+            _bottomControlMargin,
+      ),
+      right: math.max(
+        0,
+        _horizontalInsetAt(layout.effectiveCornerRadii.bottomRight, cornerDistance) -
+            _bottomControlMargin,
+      ),
+      bottom: math.max(0, adaptedBottom - flutterSafeArea.bottom),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -151,16 +197,18 @@ class ExamplePage extends StatelessWidget {
           child: Text('Available: ${layout.isAvailable}'),
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: EdgeInsetsDirectional.only(
-          start: floatingSafeArea.start,
-          end: floatingSafeArea.end,
-          bottom: floatingSafeArea.bottom,
-        ),
-        child: const Card(
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Text('Floating controls'),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        left: false,
+        right: false,
+        child: Padding(
+          padding: bottomPadding,
+          child: const Card(
+            margin: EdgeInsets.all(_bottomControlMargin),
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('Floating controls'),
+            ),
           ),
         ),
       ),

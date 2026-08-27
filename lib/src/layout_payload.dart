@@ -44,6 +44,51 @@ final class DirectionalInsetsPayload {
       EdgeInsetsDirectional.fromSTEB(start, top, end, bottom);
 }
 
+/// Physical corner radii in the native wire payload.
+///
+/// Keep this structure synchronized with Swift's `CornerRadiiPayload`.
+final class CornerRadiiPayload {
+  const CornerRadiiPayload({
+    required this.topLeft,
+    required this.topRight,
+    required this.bottomLeft,
+    required this.bottomRight,
+  });
+
+  factory CornerRadiiPayload.decode(Object? value, String field) {
+    final map = _expectMap(value, field);
+
+    double radius(String corner) {
+      final value = map[corner];
+      if (value is! num || !value.isFinite || value < 0) {
+        throw _invalidData(
+          'Expected $field.$corner to be a finite non-negative number.',
+        );
+      }
+      return value.toDouble();
+    }
+
+    return CornerRadiiPayload(
+      topLeft: radius('topLeft'),
+      topRight: radius('topRight'),
+      bottomLeft: radius('bottomLeft'),
+      bottomRight: radius('bottomRight'),
+    );
+  }
+
+  final double topLeft;
+  final double topRight;
+  final double bottomLeft;
+  final double bottomRight;
+
+  BorderRadius toBorderRadius() => BorderRadius.only(
+    topLeft: Radius.circular(topLeft),
+    topRight: Radius.circular(topRight),
+    bottomLeft: Radius.circular(bottomLeft),
+    bottomRight: Radius.circular(bottomRight),
+  );
+}
+
 /// Versioned wire payload transported by [StandardMethodCodec].
 ///
 /// Keep this structure synchronized with Swift's `LayoutPayload`. Encoded
@@ -57,6 +102,7 @@ final class LayoutPayload {
     required this.baseSafeArea,
     required this.horizontalSafeArea,
     required this.verticalSafeArea,
+    required this.effectiveCornerRadii,
   });
 
   factory LayoutPayload.decode(Object? value) {
@@ -96,10 +142,14 @@ final class LayoutPayload {
         map[_verticalSafeAreaField],
         _verticalSafeAreaField,
       ),
+      effectiveCornerRadii: CornerRadiiPayload.decode(
+        map[_effectiveCornerRadiiField],
+        _effectiveCornerRadiiField,
+      ),
     );
   }
 
-  static const schemaVersion = 2;
+  static const schemaVersion = 3;
   static const _schemaVersionField = 'schemaVersion';
   static const _isAvailableField = 'isAvailable';
   static const _baseMarginsField = 'baseMargins';
@@ -108,6 +158,7 @@ final class LayoutPayload {
   static const _baseSafeAreaField = 'baseSafeArea';
   static const _horizontalSafeAreaField = 'horizontalSafeArea';
   static const _verticalSafeAreaField = 'verticalSafeArea';
+  static const _effectiveCornerRadiiField = 'effectiveCornerRadii';
 
   final bool isAvailable;
   final DirectionalInsetsPayload baseMargins;
@@ -116,6 +167,7 @@ final class LayoutPayload {
   final DirectionalInsetsPayload baseSafeArea;
   final DirectionalInsetsPayload horizontalSafeArea;
   final DirectionalInsetsPayload verticalSafeArea;
+  final CornerRadiiPayload effectiveCornerRadii;
 
   IosWindowControlLayoutData toLayoutData() => IosWindowControlLayoutData(
     isAvailable: isAvailable,
@@ -125,6 +177,7 @@ final class LayoutPayload {
     baseSafeArea: baseSafeArea.toInsets(),
     horizontalSafeArea: horizontalSafeArea.toInsets(),
     verticalSafeArea: verticalSafeArea.toInsets(),
+    effectiveCornerRadii: effectiveCornerRadii.toBorderRadius(),
   );
 }
 

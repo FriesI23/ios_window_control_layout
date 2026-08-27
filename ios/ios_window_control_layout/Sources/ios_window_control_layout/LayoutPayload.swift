@@ -38,10 +38,34 @@ struct DirectionalInsetsPayload {
     }
 }
 
+/// Physical corner radii mirrored by Dart's `CornerRadiiPayload`.
+struct CornerRadiiPayload {
+    let topLeft: Double
+    let topRight: Double
+    let bottomLeft: Double
+    let bottomRight: Double
+
+    static let zero = CornerRadiiPayload(
+        topLeft: 0,
+        topRight: 0,
+        bottomLeft: 0,
+        bottomRight: 0
+    )
+
+    func encode() -> [String: Double] {
+        [
+            "topLeft": topLeft,
+            "topRight": topRight,
+            "bottomLeft": bottomLeft,
+            "bottomRight": bottomRight,
+        ]
+    }
+}
+
 /// Versioned payload containing only StandardMessageCodec-compatible values.
 /// Keep this structure synchronized with Dart's `LayoutPayload`.
 struct LayoutPayload {
-    static let schemaVersion = 2
+    static let schemaVersion = 3
 
     static let unavailable = LayoutPayload(
         isAvailable: false,
@@ -50,7 +74,8 @@ struct LayoutPayload {
         verticalMargins: DirectionalInsetsPayload(.zero),
         baseSafeArea: DirectionalInsetsPayload(.zero),
         horizontalSafeArea: DirectionalInsetsPayload(.zero),
-        verticalSafeArea: DirectionalInsetsPayload(.zero)
+        verticalSafeArea: DirectionalInsetsPayload(.zero),
+        effectiveCornerRadii: .zero
     )
 
     let isAvailable: Bool
@@ -60,6 +85,7 @@ struct LayoutPayload {
     let baseSafeArea: DirectionalInsetsPayload
     let horizontalSafeArea: DirectionalInsetsPayload
     let verticalSafeArea: DirectionalInsetsPayload
+    let effectiveCornerRadii: CornerRadiiPayload
 
     func encode() -> [String: Any] {
         [
@@ -71,6 +97,7 @@ struct LayoutPayload {
             "baseSafeArea": baseSafeArea.encode(),
             "horizontalSafeArea": horizontalSafeArea.encode(),
             "verticalSafeArea": verticalSafeArea.encode(),
+            "effectiveCornerRadii": effectiveCornerRadii.encode(),
         ]
     }
 }

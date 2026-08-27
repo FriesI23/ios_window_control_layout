@@ -93,6 +93,17 @@ void main() {
     expect(untreatedLeading.left, closeTo(16, 0.01));
     expect(untreatedTrailing.right, closeTo(appBar.right - 16, 0.01));
   });
+
+  testWidgets('bottom controls ignore top window-control safe-area insets', (
+    tester,
+  ) async {
+    await _pumpExample(tester);
+
+    final boundaryPadding = tester.widget<Padding>(
+      find.byKey(const ValueKey('bottom-boundary-padding')),
+    );
+    expect(boundaryPadding.padding, const EdgeInsets.only(bottom: 28));
+  });
 }
 
 Future<void> _pumpExample(WidgetTester tester) async {
@@ -106,14 +117,20 @@ Future<void> _pumpExample(WidgetTester tester) async {
 }
 
 Map<String, Object> _layoutPayload() => <String, Object>{
-  'schemaVersion': 2,
+  'schemaVersion': 3,
   'isAvailable': true,
   'baseMargins': _insets(0, 0, 0, 0),
   'horizontalMargins': _insets(80, 0, 20, 0),
   'verticalMargins': _insets(0, 0, 0, 0),
   'baseSafeArea': _insets(0, 0, 0, 12),
-  'horizontalSafeArea': _insets(24, 0, 24, 28),
-  'verticalSafeArea': _insets(0, 0, 0, 0),
+  'horizontalSafeArea': _insets(96, 0, 48, 28),
+  'verticalSafeArea': _insets(0, 0, 0, 28),
+  'effectiveCornerRadii': <String, double>{
+    'topLeft': 62,
+    'topRight': 62,
+    'bottomLeft': 26,
+    'bottomRight': 26,
+  },
 };
 
 Map<String, double> _insets(

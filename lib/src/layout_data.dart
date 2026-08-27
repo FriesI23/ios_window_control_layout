@@ -19,6 +19,7 @@ final class IosWindowControlLayoutData {
     this.baseSafeArea = EdgeInsetsDirectional.zero,
     this.horizontalSafeArea = EdgeInsetsDirectional.zero,
     this.verticalSafeArea = EdgeInsetsDirectional.zero,
+    this.effectiveCornerRadii = BorderRadius.zero,
   });
 
   /// A snapshot for unsupported platforms and iOS versions before iOS 26.
@@ -30,6 +31,7 @@ final class IosWindowControlLayoutData {
     baseSafeArea: EdgeInsetsDirectional.zero,
     horizontalSafeArea: EdgeInsetsDirectional.zero,
     verticalSafeArea: EdgeInsetsDirectional.zero,
+    effectiveCornerRadii: BorderRadius.zero,
   );
 
   /// Whether UIKit layout regions are available for the current view.
@@ -61,6 +63,13 @@ final class IosWindowControlLayoutData {
   /// This is the raw UIKit layout region and can be used directly as layout
   /// padding for floating controls near vertically curved corners.
   final EdgeInsetsDirectional verticalSafeArea;
+
+  /// Effective physical corner radii of the current UIKit view.
+  ///
+  /// The values follow the current device, orientation, and window geometry.
+  /// They are zero when unavailable. Unlike directional insets, physical
+  /// corner radii do not flip in right-to-left layouts.
+  final BorderRadius effectiveCornerRadii;
 
   /// Extra directional insets needed for horizontal corner adaptation.
   EdgeInsetsDirectional get horizontalAvoidance =>
@@ -111,7 +120,8 @@ final class IosWindowControlLayoutData {
           other.verticalMargins == verticalMargins &&
           other.baseSafeArea == baseSafeArea &&
           other.horizontalSafeArea == horizontalSafeArea &&
-          other.verticalSafeArea == verticalSafeArea;
+          other.verticalSafeArea == verticalSafeArea &&
+          other.effectiveCornerRadii == effectiveCornerRadii;
 
   @override
   int get hashCode => Object.hash(
@@ -122,6 +132,7 @@ final class IosWindowControlLayoutData {
     baseSafeArea,
     horizontalSafeArea,
     verticalSafeArea,
+    effectiveCornerRadii,
   );
 
   @override
@@ -133,5 +144,6 @@ final class IosWindowControlLayoutData {
       'verticalMargins: $verticalMargins, '
       'baseSafeArea: $baseSafeArea, '
       'horizontalSafeArea: $horizontalSafeArea, '
-      'verticalSafeArea: $verticalSafeArea)';
+      'verticalSafeArea: $verticalSafeArea, '
+      'effectiveCornerRadii: $effectiveCornerRadii)';
 }

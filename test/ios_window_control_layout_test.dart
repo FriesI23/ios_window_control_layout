@@ -38,6 +38,7 @@ void main() {
       baseSafeArea: EdgeInsetsDirectional.fromSTEB(4, 6, 8, 10),
       horizontalSafeArea: EdgeInsetsDirectional.fromSTEB(34, 4, 6, 10),
       verticalSafeArea: EdgeInsetsDirectional.fromSTEB(2, 46, 8, 8),
+      effectiveCornerRadii: BorderRadius.all(Radius.circular(62)),
     );
 
     expect(
@@ -78,6 +79,10 @@ void main() {
       IosWindowControlLayoutData.zero.verticalSafeAreaAvoidance,
       EdgeInsetsDirectional.zero,
     );
+    expect(
+      IosWindowControlLayoutData.zero.effectiveCornerRadii,
+      BorderRadius.zero,
+    );
   });
 
   test('data has value equality', () {
@@ -89,6 +94,7 @@ void main() {
       baseSafeArea: EdgeInsetsDirectional.all(4),
       horizontalSafeArea: EdgeInsetsDirectional.all(12),
       verticalSafeArea: EdgeInsetsDirectional.all(20),
+      effectiveCornerRadii: BorderRadius.all(Radius.circular(62)),
     );
     const second = IosWindowControlLayoutData(
       isAvailable: true,
@@ -98,6 +104,7 @@ void main() {
       baseSafeArea: EdgeInsetsDirectional.all(4),
       horizontalSafeArea: EdgeInsetsDirectional.all(12),
       verticalSafeArea: EdgeInsetsDirectional.all(20),
+      effectiveCornerRadii: BorderRadius.all(Radius.circular(62)),
     );
 
     expect(first, second);
@@ -113,12 +120,14 @@ void main() {
           baseSafeArea: EdgeInsetsDirectional.all(5),
           horizontalSafeArea: EdgeInsetsDirectional.all(12),
           verticalSafeArea: EdgeInsetsDirectional.all(20),
+          effectiveCornerRadii: BorderRadius.all(Radius.circular(61)),
         ),
       ),
     );
     expect(first.toString(), contains('baseSafeArea:'));
     expect(first.toString(), contains('horizontalSafeArea:'));
     expect(first.toString(), contains('verticalSafeArea:'));
+    expect(first.toString(), contains('effectiveCornerRadii:'));
   });
 
   test('low-level query delegates to the platform implementation', () async {

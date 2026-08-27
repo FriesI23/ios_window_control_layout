@@ -18,5 +18,6 @@ void main() {
     expect(data.baseSafeArea.end.isFinite, isTrue);
     expect(data.horizontalSafeAreaAvoidance.start.isFinite, isTrue);
     expect(data.verticalSafeAreaAvoidance.bottom.isFinite, isTrue);
+    expect(data.effectiveCornerRadii.bottomLeft.x.isFinite, isTrue);
   });
 }

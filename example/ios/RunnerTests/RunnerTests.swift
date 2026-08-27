@@ -5,7 +5,7 @@ import XCTest
 @testable import ios_window_control_layout
 
 class RunnerTests: XCTestCase {
-  func testMissingViewReturnsStableErrorOrUnavailableV2Payload() {
+  func testMissingViewReturnsStableErrorOrUnavailableV3Payload() {
     let plugin = IosWindowControlLayoutPlugin()
     let call = FlutterMethodCall(methodName: "queryLayout", arguments: nil)
 
@@ -22,7 +22,7 @@ class RunnerTests: XCTestCase {
     waitForExpectations(timeout: 1)
   }
 
-  func testUnavailablePayloadContainsCompleteV2ZeroValues() {
+  func testUnavailablePayloadContainsCompleteV3ZeroValues() {
     assertUnavailablePayload(LayoutPayload.unavailable.encode())
   }
 
@@ -33,7 +33,8 @@ class RunnerTests: XCTestCase {
       verticalMargins: insets(9),
       baseSafeArea: insets(13),
       horizontalSafeArea: insets(17),
-      verticalSafeArea: insets(21)
+      verticalSafeArea: insets(21),
+      effectiveCornerRadii: radii(25)
     )
 
     XCTAssertTrue(payload.isAvailable)
@@ -43,6 +44,7 @@ class RunnerTests: XCTestCase {
     XCTAssertEqual(payload.baseSafeArea.bottom, 15)
     XCTAssertEqual(payload.horizontalSafeArea.start, 18)
     XCTAssertEqual(payload.verticalSafeArea.end, 24)
+    XCTAssertEqual(payload.effectiveCornerRadii.bottomRight, 28)
   }
 
   func testEncodedPayloadHasCorrectFieldsAndDirectionalValues() {
@@ -52,15 +54,16 @@ class RunnerTests: XCTestCase {
       verticalMargins: insets(9),
       baseSafeArea: insets(13),
       horizontalSafeArea: insets(17),
-      verticalSafeArea: insets(21)
+      verticalSafeArea: insets(21),
+      effectiveCornerRadii: radii(25)
     ).encode()
 
-    XCTAssertEqual(layout["schemaVersion"] as? Int, 2)
+    XCTAssertEqual(layout["schemaVersion"] as? Int, 3)
     XCTAssertEqual(layout["isAvailable"] as? Bool, true)
     XCTAssertEqual(Set(layout.keys), Set([
       "schemaVersion", "isAvailable", "baseMargins", "horizontalMargins",
       "verticalMargins", "baseSafeArea", "horizontalSafeArea",
-      "verticalSafeArea",
+      "verticalSafeArea", "effectiveCornerRadii",
     ]))
     assertInsets(layout["baseMargins"], [2, 1, 4, 3])
     assertInsets(layout["horizontalMargins"], [6, 5, 8, 7])
@@ -68,6 +71,7 @@ class RunnerTests: XCTestCase {
     assertInsets(layout["baseSafeArea"], [14, 13, 16, 15])
     assertInsets(layout["horizontalSafeArea"], [18, 17, 20, 19])
     assertInsets(layout["verticalSafeArea"], [22, 21, 24, 23])
+    assertRadii(layout["effectiveCornerRadii"], [25, 26, 27, 28])
   }
 
   private func insets(_ value: CGFloat) -> NSDirectionalEdgeInsets {
@@ -79,6 +83,15 @@ class RunnerTests: XCTestCase {
     )
   }
 
+  private func radii(_ value: Double) -> CornerRadiiPayload {
+    CornerRadiiPayload(
+      topLeft: value,
+      topRight: value + 1,
+      bottomLeft: value + 2,
+      bottomRight: value + 3
+    )
+  }
+
   private func assertInsets(_ value: Any?, _ expected: [Double]) {
     let insets = value as? [String: Double]
     XCTAssertEqual(insets?["start"], expected[0])
@@ -87,8 +100,16 @@ class RunnerTests: XCTestCase {
     XCTAssertEqual(insets?["bottom"], expected[3])
   }
 
+  private func assertRadii(_ value: Any?, _ expected: [Double]) {
+    let radii = value as? [String: Double]
+    XCTAssertEqual(radii?["topLeft"], expected[0])
+    XCTAssertEqual(radii?["topRight"], expected[1])
+    XCTAssertEqual(radii?["bottomLeft"], expected[2])
+    XCTAssertEqual(radii?["bottomRight"], expected[3])
+  }
+
   private func assertUnavailablePayload(_ layout: [String: Any]?) {
-    XCTAssertEqual(layout?["schemaVersion"] as? Int, 2)
+    XCTAssertEqual(layout?["schemaVersion"] as? Int, 3)
     XCTAssertEqual(layout?["isAvailable"] as? Bool, false)
     for field in [
       "baseMargins", "horizontalMargins", "verticalMargins", "baseSafeArea",
@@ -96,5 +117,6 @@ class RunnerTests: XCTestCase {
     ] {
       assertInsets(layout?[field], [0, 0, 0, 0])
     }
+    assertRadii(layout?["effectiveCornerRadii"], [0, 0, 0, 0])
   }
 }

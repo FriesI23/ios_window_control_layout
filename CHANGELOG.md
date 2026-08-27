@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0
+
+- Expose the current UIKit view's physical effective corner radii on iOS 26.
+- Upgrade the native wire payload to schema version 3.
+
 ## 0.2.0
 
 - Add iOS 26 corner-adapted safe-area layout regions and directional

@@ -33,6 +33,12 @@ extension IosWindowControlLayoutPlugin {
             ),
             verticalSafeArea: view.directionalEdgeInsets(
                 for: .safeArea(cornerAdaptation: .vertical)
+            ),
+            effectiveCornerRadii: CornerRadiiPayload(
+                topLeft: Double(view.effectiveRadius(corner: .topLeft)),
+                topRight: Double(view.effectiveRadius(corner: .topRight)),
+                bottomLeft: Double(view.effectiveRadius(corner: .bottomLeft)),
+                bottomRight: Double(view.effectiveRadius(corner: .bottomRight))
             )
         )
         result(payload.encode())
@@ -44,7 +50,8 @@ extension IosWindowControlLayoutPlugin {
         verticalMargins: NSDirectionalEdgeInsets,
         baseSafeArea: NSDirectionalEdgeInsets,
         horizontalSafeArea: NSDirectionalEdgeInsets,
-        verticalSafeArea: NSDirectionalEdgeInsets
+        verticalSafeArea: NSDirectionalEdgeInsets,
+        effectiveCornerRadii: CornerRadiiPayload
     ) -> LayoutPayload {
         LayoutPayload(
             isAvailable: true,
@@ -53,7 +60,8 @@ extension IosWindowControlLayoutPlugin {
             verticalMargins: DirectionalInsetsPayload(verticalMargins),
             baseSafeArea: DirectionalInsetsPayload(baseSafeArea),
             horizontalSafeArea: DirectionalInsetsPayload(horizontalSafeArea),
-            verticalSafeArea: DirectionalInsetsPayload(verticalSafeArea)
+            verticalSafeArea: DirectionalInsetsPayload(verticalSafeArea),
+            effectiveCornerRadii: effectiveCornerRadii
         )
     }
 }

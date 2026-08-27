@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:ios_window_control_layout/ios_window_control_layout.dart';
 
 const _toolbarEdgePadding = 16.0;
+const _bottomControlMargin = 12.0;
 
 void main() {
   runApp(const ExampleApp());
@@ -46,14 +47,13 @@ class _ExamplePageState extends State<_ExamplePage> {
     final avoidance = _applyWindowControlLayout
         ? data.horizontalAvoidance
         : EdgeInsetsDirectional.zero;
-    final floatingSafeArea = _applyWindowControlLayout
-        ? EdgeInsetsDirectional.fromSTEB(
-            data.horizontalSafeArea.start,
-            data.verticalSafeArea.top,
-            data.horizontalSafeArea.end,
-            data.verticalSafeArea.bottom,
+    final bottomControlPadding = _applyWindowControlLayout
+        ? _bottomBoundaryPadding(
+            flutterSafeArea: flutterSafeArea,
+            verticalSafeArea: data.verticalSafeArea,
+            cornerRadii: data.effectiveCornerRadii,
           )
-        : EdgeInsetsDirectional.zero;
+        : EdgeInsets.zero;
     return Scaffold(
       appBar: switch (_style) {
         _AppBarStyle.material => _buildMaterialAppBar(context, avoidance),
@@ -121,6 +121,7 @@ class _ExamplePageState extends State<_ExamplePage> {
             Text('Vertical avoidance: ${data.verticalAvoidance}'),
             Text('Adapted safe area: ${data.horizontalSafeArea}'),
             Text('Safe-area avoidance: ${data.horizontalSafeAreaAvoidance}'),
+            Text('Effective corner radii: ${data.effectiveCornerRadii}'),
             Text('Flutter safe area: $flutterSafeArea'),
             const SizedBox(height: 24),
             _InsetsPreview(
@@ -153,23 +154,17 @@ class _ExamplePageState extends State<_ExamplePage> {
           child: ColoredBox(
             color: Theme.of(context).scaffoldBackgroundColor,
             child: Padding(
-              padding: EdgeInsetsDirectional.only(
-                start: floatingSafeArea.start,
-                end: floatingSafeArea.end,
-                bottom: math.max(
-                  0,
-                  floatingSafeArea.bottom - flutterSafeArea.bottom,
-                ),
-              ),
+              key: const ValueKey('bottom-boundary-padding'),
+              padding: bottomControlPadding,
               child: Opacity(
                 key: const ValueKey('uikit-floating-control'),
                 opacity: 0.85,
                 child: Card(
-                  margin: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.all(_bottomControlMargin),
                   child: const Padding(
                     padding: EdgeInsets.all(16),
                     child: Text(
-                      'Floating controls use UIKit corner-adapted safe areas',
+                      'Floating controls use UIKit bottom-corner geometry',
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -246,6 +241,49 @@ class _ExamplePageState extends State<_ExamplePage> {
     if (_style == style) return;
     setState(() => _style = style);
   }
+}
+
+EdgeInsets _bottomBoundaryPadding({
+  required EdgeInsets flutterSafeArea,
+  required EdgeInsetsDirectional verticalSafeArea,
+  required BorderRadius cornerRadii,
+}) {
+  final adaptedBottom = math.max(
+    flutterSafeArea.bottom,
+    verticalSafeArea.bottom,
+  );
+  final distanceFromBottom = adaptedBottom + _bottomControlMargin;
+  return EdgeInsets.only(
+    left: math.max(
+      0,
+      _horizontalInsetAt(
+            radius: cornerRadii.bottomLeft,
+            distanceFromBottom: distanceFromBottom,
+          ) -
+          _bottomControlMargin,
+    ),
+    right: math.max(
+      0,
+      _horizontalInsetAt(
+            radius: cornerRadii.bottomRight,
+            distanceFromBottom: distanceFromBottom,
+          ) -
+          _bottomControlMargin,
+    ),
+    bottom: math.max(0, adaptedBottom - flutterSafeArea.bottom),
+  );
+}
+
+double _horizontalInsetAt({
+  required Radius radius,
+  required double distanceFromBottom,
+}) {
+  if (radius.x <= 0 || radius.y <= 0 || distanceFromBottom >= radius.y) {
+    return 0;
+  }
+  final normalizedY = (radius.y - distanceFromBottom) / radius.y;
+  final normalizedX = math.sqrt(math.max(0, 1 - normalizedY * normalizedY));
+  return radius.x * (1 - normalizedX);
 }
 
 class _InsetsPreview extends StatelessWidget {
