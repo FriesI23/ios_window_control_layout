@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1
+
+- Preserve the current UIKit interface idiom and window state on iOS versions
+  before 26 while keeping unavailable layout-region values at zero.
+- Select the supported window-scene coordinate-space API for iOS 13–25 and
+  iOS 26 or later without calling newer layout APIs on older systems.
+
 ## 0.4.0
 
 - Expose the current UIKit interface idiom and whether the iPadOS scene

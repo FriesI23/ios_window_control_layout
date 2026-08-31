@@ -5,25 +5,28 @@ import XCTest
 @testable import ios_window_control_layout
 
 class RunnerTests: XCTestCase {
-  func testMissingViewReturnsStableErrorOrUnavailableV4Payload() {
+  func testMissingViewReturnsStableError() {
     let plugin = IosWindowControlLayoutPlugin()
     let call = FlutterMethodCall(methodName: "queryLayout", arguments: nil)
 
     let resultExpectation = expectation(description: "result block must be called")
     plugin.handle(call) { result in
-      if #available(iOS 26.0, *) {
-        let error = result as? FlutterError
-        XCTAssertEqual(error?.code, "view_unavailable")
-      } else {
-        self.assertUnavailablePayload(result as? [String: Any])
-      }
+      let error = result as? FlutterError
+      XCTAssertEqual(error?.code, "view_unavailable")
       resultExpectation.fulfill()
     }
     waitForExpectations(timeout: 1)
   }
 
-  func testUnavailablePayloadContainsCompleteV4ZeroValues() {
-    assertUnavailablePayload(LayoutPayload.unavailable.encode())
+  func testUnavailablePayloadPreservesDeviceAndWindowState() {
+    assertUnavailablePayload(
+      LayoutPayload.layoutRegionsUnavailable(
+        isPad: true,
+        isFullScreen: false
+      ).encode(),
+      isPad: true,
+      isFullScreen: false
+    )
   }
 
   func testFullscreenRequiresExactSceneAndScreenCoverage() {
@@ -137,11 +140,15 @@ class RunnerTests: XCTestCase {
     XCTAssertEqual(radii?["bottomRight"], expected[3])
   }
 
-  private func assertUnavailablePayload(_ layout: [String: Any]?) {
+  private func assertUnavailablePayload(
+    _ layout: [String: Any]?,
+    isPad: Bool,
+    isFullScreen: Bool
+  ) {
     XCTAssertEqual(layout?["schemaVersion"] as? Int, 4)
     XCTAssertEqual(layout?["isAvailable"] as? Bool, false)
-    XCTAssertEqual(layout?["isPad"] as? Bool, false)
-    XCTAssertEqual(layout?["isFullScreen"] as? Bool, true)
+    XCTAssertEqual(layout?["isPad"] as? Bool, isPad)
+    XCTAssertEqual(layout?["isFullScreen"] as? Bool, isFullScreen)
     for field in [
       "baseMargins", "horizontalMargins", "verticalMargins", "baseSafeArea",
       "horizontalSafeArea", "verticalSafeArea",

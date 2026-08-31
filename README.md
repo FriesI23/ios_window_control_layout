@@ -103,8 +103,10 @@ avoidance values are additions to a baseline that is already applied. The
 insets still describe a rectangular root view, so use `effectiveCornerRadii`
 when a control should respond only to its nearby physical corners.
 
-All values belong to one immutable snapshot and refresh together. iOS versions
-before 26 and other platforms return zero values.
+All values belong to one immutable snapshot and refresh together. On iOS
+versions before 26, `isPad` and `isFullScreen` still describe the current view
+and scene, while the unavailable layout-region and corner values are zero.
+Other platforms return the zero snapshot.
 
 <details>
 <summary>Complete example</summary>

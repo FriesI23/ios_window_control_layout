@@ -56,9 +56,10 @@ class IosWindowControlLayout extends StatefulWidget {
 
   /// Queries the layout margins and safe areas for the current Flutter view.
   ///
-  /// Unsupported platforms and iOS versions before iOS 26 return
-  /// [IosWindowControlLayoutData.zero]. Native integration failures are
-  /// surfaced as platform exceptions.
+  /// Unsupported platforms return [IosWindowControlLayoutData.zero]. On iOS
+  /// versions before iOS 26, device and window state remain populated while
+  /// layout-region values are unavailable and zero. Native integration
+  /// failures are surfaced as platform exceptions.
   static Future<IosWindowControlLayoutData> query() =>
       IosWindowControlLayoutPlatform.instance.query();
 

@@ -24,7 +24,7 @@ final class IosWindowControlLayoutData {
     this.effectiveCornerRadii = BorderRadius.zero,
   });
 
-  /// A snapshot for unsupported platforms and iOS versions before iOS 26.
+  /// A snapshot for unsupported platforms.
   static const zero = IosWindowControlLayoutData(
     isAvailable: false,
     isPad: false,
@@ -42,6 +42,9 @@ final class IosWindowControlLayoutData {
   final bool isAvailable;
 
   /// Whether the current Flutter view uses UIKit's iPad interface idiom.
+  ///
+  /// This state remains available on iOS versions before iOS 26 even though
+  /// the layout-region fields are unavailable.
   final bool isPad;
 
   /// Whether the current iPadOS window scene occupies its complete screen.
@@ -49,7 +52,10 @@ final class IosWindowControlLayoutData {
   /// UIKit does not expose its Mac Catalyst `UIWindowScene.isFullScreen`
   /// property on iPadOS. The native implementation compares the scene and
   /// screen coordinate spaces exactly, without size or inset thresholds.
-  /// Unsupported platforms conservatively report `true`.
+  /// On iOS 13 through 25 the implementation uses
+  /// `UIWindowScene.coordinateSpace`; on iOS 26 and later it uses
+  /// `effectiveGeometry.coordinateSpace`. Unsupported platforms
+  /// conservatively report `true`.
   final bool isFullScreen;
 
   /// The view's ordinary directional layout margins.

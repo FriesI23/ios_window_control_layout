@@ -3,10 +3,6 @@ import UIKit
 
 extension IosWindowControlLayoutPlugin {
     func handleQueryLayout(result: FlutterResult) {
-        guard #available(iOS 26.0, *) else {
-            result(LayoutPayload.unavailable.encode())
-            return
-        }
         guard let view = registrar?.viewController?.viewIfLoaded else {
             result(
                 FlutterError(
@@ -29,18 +25,36 @@ extension IosWindowControlLayoutPlugin {
         }
 
         view.layoutIfNeeded()
-        let sceneCoordinateSpace = windowScene.effectiveGeometry.coordinateSpace
+        let sceneCoordinateSpace: UICoordinateSpace
+        if #available(iOS 26.0, *) {
+            sceneCoordinateSpace = windowScene.effectiveGeometry.coordinateSpace
+        } else {
+            sceneCoordinateSpace = windowScene.coordinateSpace
+        }
         let screenCoordinateSpace = windowScene.screen.coordinateSpace
         let sceneBoundsInScreen = sceneCoordinateSpace.convert(
             sceneCoordinateSpace.bounds,
             to: screenCoordinateSpace
         )
+        let isPad = view.traitCollection.userInterfaceIdiom == .pad
+        let isFullScreen = Self.isFullScreen(
+            sceneBoundsInScreen: sceneBoundsInScreen,
+            screenBounds: screenCoordinateSpace.bounds
+        )
+
+        guard #available(iOS 26.0, *) else {
+            result(
+                LayoutPayload.layoutRegionsUnavailable(
+                    isPad: isPad,
+                    isFullScreen: isFullScreen
+                ).encode()
+            )
+            return
+        }
+
         let payload = Self.queryLayout(
-            isPad: view.traitCollection.userInterfaceIdiom == .pad,
-            isFullScreen: Self.isFullScreen(
-                sceneBoundsInScreen: sceneBoundsInScreen,
-                screenBounds: screenCoordinateSpace.bounds
-            ),
+            isPad: isPad,
+            isFullScreen: isFullScreen,
             baseMargins: view.directionalEdgeInsets(for: .margins()),
             horizontalMargins: view.directionalEdgeInsets(
                 for: .margins(cornerAdaptation: .horizontal)

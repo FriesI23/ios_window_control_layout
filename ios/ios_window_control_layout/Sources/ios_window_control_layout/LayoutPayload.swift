@@ -67,18 +67,23 @@ struct CornerRadiiPayload {
 struct LayoutPayload {
     static let schemaVersion = 4
 
-    static let unavailable = LayoutPayload(
-        isAvailable: false,
-        isPad: false,
-        isFullScreen: true,
-        baseMargins: DirectionalInsetsPayload(.zero),
-        horizontalMargins: DirectionalInsetsPayload(.zero),
-        verticalMargins: DirectionalInsetsPayload(.zero),
-        baseSafeArea: DirectionalInsetsPayload(.zero),
-        horizontalSafeArea: DirectionalInsetsPayload(.zero),
-        verticalSafeArea: DirectionalInsetsPayload(.zero),
-        effectiveCornerRadii: .zero
-    )
+    static func layoutRegionsUnavailable(
+        isPad: Bool,
+        isFullScreen: Bool
+    ) -> LayoutPayload {
+        LayoutPayload(
+            isAvailable: false,
+            isPad: isPad,
+            isFullScreen: isFullScreen,
+            baseMargins: DirectionalInsetsPayload(.zero),
+            horizontalMargins: DirectionalInsetsPayload(.zero),
+            verticalMargins: DirectionalInsetsPayload(.zero),
+            baseSafeArea: DirectionalInsetsPayload(.zero),
+            horizontalSafeArea: DirectionalInsetsPayload(.zero),
+            verticalSafeArea: DirectionalInsetsPayload(.zero),
+            effectiveCornerRadii: .zero
+        )
+    }
 
     let isAvailable: Bool
     let isPad: Bool

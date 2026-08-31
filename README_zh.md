@@ -101,8 +101,9 @@ Margin 类数值更适合普通内容，safe-area 类数值更适合靠近设备
 矩形根 view；如果控件只需要跟随邻近的物理圆角，使用
 `effectiveCornerRadii` 会更合适。
 
-所有数值都属于同一份不可变布局快照，并会一起刷新。iOS 26 以下与
-其他平台均返回零值。
+所有数值都属于同一份不可变布局快照，并会一起刷新。iOS 26 以下仍会
+返回当前 view 的 `isPad` 与 scene 的 `isFullScreen`，不可用的布局区域和
+圆角数值为零；其他平台返回完整的零值快照。
 
 <details>
 <summary>完整示例</summary>
