@@ -5,7 +5,7 @@ import XCTest
 @testable import ios_window_control_layout
 
 class RunnerTests: XCTestCase {
-  func testMissingViewReturnsStableErrorOrUnavailableV3Payload() {
+  func testMissingViewReturnsStableErrorOrUnavailableV4Payload() {
     let plugin = IosWindowControlLayoutPlugin()
     let call = FlutterMethodCall(methodName: "queryLayout", arguments: nil)
 
@@ -22,12 +22,35 @@ class RunnerTests: XCTestCase {
     waitForExpectations(timeout: 1)
   }
 
-  func testUnavailablePayloadContainsCompleteV3ZeroValues() {
+  func testUnavailablePayloadContainsCompleteV4ZeroValues() {
     assertUnavailablePayload(LayoutPayload.unavailable.encode())
+  }
+
+  func testFullscreenRequiresExactSceneAndScreenCoverage() {
+    XCTAssertTrue(
+      IosWindowControlLayoutPlugin.isFullScreen(
+        sceneBoundsInScreen: CGRect(x: 0, y: 0, width: 1024, height: 1366),
+        screenBounds: CGRect(x: 0, y: 0, width: 1024, height: 1366)
+      )
+    )
+    XCTAssertFalse(
+      IosWindowControlLayoutPlugin.isFullScreen(
+        sceneBoundsInScreen: CGRect(x: 80, y: 120, width: 900, height: 1100),
+        screenBounds: CGRect(x: 0, y: 0, width: 1024, height: 1366)
+      )
+    )
+    XCTAssertFalse(
+      IosWindowControlLayoutPlugin.isFullScreen(
+        sceneBoundsInScreen: CGRect(x: 0, y: 0, width: 1024, height: 1365.5),
+        screenBounds: CGRect(x: 0, y: 0, width: 1024, height: 1366)
+      )
+    )
   }
 
   func testPureQueryPreservesMarginsAndSafeAreas() {
     let payload = IosWindowControlLayoutPlugin.queryLayout(
+      isPad: true,
+      isFullScreen: false,
       baseMargins: insets(1),
       horizontalMargins: insets(5),
       verticalMargins: insets(9),
@@ -38,6 +61,8 @@ class RunnerTests: XCTestCase {
     )
 
     XCTAssertTrue(payload.isAvailable)
+    XCTAssertTrue(payload.isPad)
+    XCTAssertFalse(payload.isFullScreen)
     XCTAssertEqual(payload.baseMargins.start, 2)
     XCTAssertEqual(payload.horizontalMargins.top, 5)
     XCTAssertEqual(payload.verticalMargins.end, 12)
@@ -49,6 +74,8 @@ class RunnerTests: XCTestCase {
 
   func testEncodedPayloadHasCorrectFieldsAndDirectionalValues() {
     let layout = IosWindowControlLayoutPlugin.queryLayout(
+      isPad: true,
+      isFullScreen: false,
       baseMargins: insets(1),
       horizontalMargins: insets(5),
       verticalMargins: insets(9),
@@ -58,12 +85,14 @@ class RunnerTests: XCTestCase {
       effectiveCornerRadii: radii(25)
     ).encode()
 
-    XCTAssertEqual(layout["schemaVersion"] as? Int, 3)
+    XCTAssertEqual(layout["schemaVersion"] as? Int, 4)
     XCTAssertEqual(layout["isAvailable"] as? Bool, true)
+    XCTAssertEqual(layout["isPad"] as? Bool, true)
+    XCTAssertEqual(layout["isFullScreen"] as? Bool, false)
     XCTAssertEqual(Set(layout.keys), Set([
-      "schemaVersion", "isAvailable", "baseMargins", "horizontalMargins",
-      "verticalMargins", "baseSafeArea", "horizontalSafeArea",
-      "verticalSafeArea", "effectiveCornerRadii",
+      "schemaVersion", "isAvailable", "isPad", "isFullScreen",
+      "baseMargins", "horizontalMargins", "verticalMargins", "baseSafeArea",
+      "horizontalSafeArea", "verticalSafeArea", "effectiveCornerRadii",
     ]))
     assertInsets(layout["baseMargins"], [2, 1, 4, 3])
     assertInsets(layout["horizontalMargins"], [6, 5, 8, 7])
@@ -109,8 +138,10 @@ class RunnerTests: XCTestCase {
   }
 
   private func assertUnavailablePayload(_ layout: [String: Any]?) {
-    XCTAssertEqual(layout?["schemaVersion"] as? Int, 3)
+    XCTAssertEqual(layout?["schemaVersion"] as? Int, 4)
     XCTAssertEqual(layout?["isAvailable"] as? Bool, false)
+    XCTAssertEqual(layout?["isPad"] as? Bool, false)
+    XCTAssertEqual(layout?["isFullScreen"] as? Bool, true)
     for field in [
       "baseMargins", "horizontalMargins", "verticalMargins", "baseSafeArea",
       "horizontalSafeArea", "verticalSafeArea",

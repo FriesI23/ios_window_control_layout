@@ -96,6 +96,8 @@ final class CornerRadiiPayload {
 final class LayoutPayload {
   const LayoutPayload({
     required this.isAvailable,
+    required this.isPad,
+    required this.isFullScreen,
     required this.baseMargins,
     required this.horizontalMargins,
     required this.verticalMargins,
@@ -115,9 +117,19 @@ final class LayoutPayload {
     if (isAvailable is! bool) {
       throw _invalidData('Expected a boolean $_isAvailableField value.');
     }
+    final isPad = map[_isPadField];
+    if (isPad is! bool) {
+      throw _invalidData('Expected a boolean $_isPadField value.');
+    }
+    final isFullScreen = map[_isFullScreenField];
+    if (isFullScreen is! bool) {
+      throw _invalidData('Expected a boolean $_isFullScreenField value.');
+    }
 
     return LayoutPayload(
       isAvailable: isAvailable,
+      isPad: isPad,
+      isFullScreen: isFullScreen,
       baseMargins: DirectionalInsetsPayload.decode(
         map[_baseMarginsField],
         _baseMarginsField,
@@ -149,9 +161,11 @@ final class LayoutPayload {
     );
   }
 
-  static const schemaVersion = 3;
+  static const schemaVersion = 4;
   static const _schemaVersionField = 'schemaVersion';
   static const _isAvailableField = 'isAvailable';
+  static const _isPadField = 'isPad';
+  static const _isFullScreenField = 'isFullScreen';
   static const _baseMarginsField = 'baseMargins';
   static const _horizontalMarginsField = 'horizontalMargins';
   static const _verticalMarginsField = 'verticalMargins';
@@ -161,6 +175,8 @@ final class LayoutPayload {
   static const _effectiveCornerRadiiField = 'effectiveCornerRadii';
 
   final bool isAvailable;
+  final bool isPad;
+  final bool isFullScreen;
   final DirectionalInsetsPayload baseMargins;
   final DirectionalInsetsPayload horizontalMargins;
   final DirectionalInsetsPayload verticalMargins;
@@ -171,6 +187,8 @@ final class LayoutPayload {
 
   IosWindowControlLayoutData toLayoutData() => IosWindowControlLayoutData(
     isAvailable: isAvailable,
+    isPad: isPad,
+    isFullScreen: isFullScreen,
     baseMargins: baseMargins.toInsets(),
     horizontalMargins: horizontalMargins.toInsets(),
     verticalMargins: verticalMargins.toInsets(),

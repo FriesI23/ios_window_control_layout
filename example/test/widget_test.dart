@@ -104,6 +104,30 @@ void main() {
     );
     expect(boundaryPadding.padding, const EdgeInsets.only(bottom: 28));
   });
+
+  testWidgets('shows live iPad fullscreen and window-control status', (
+    tester,
+  ) async {
+    var isFullScreen = false;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          channel,
+          (_) async => _layoutPayload(isFullScreen: isFullScreen),
+        );
+
+    await _pumpExample(tester);
+
+    expect(find.text('Interface idiom: iPad'), findsOneWidget);
+    expect(find.text('Window mode: windowed'), findsOneWidget);
+    expect(find.text('iPad window-control avoidance: present'), findsOneWidget);
+
+    isFullScreen = true;
+    tester.binding.handleMetricsChanged();
+    await tester.pump();
+
+    expect(find.text('Window mode: fullscreen'), findsOneWidget);
+    expect(find.text('iPad window-control avoidance: absent'), findsOneWidget);
+  });
 }
 
 Future<void> _pumpExample(WidgetTester tester) async {
@@ -116,22 +140,25 @@ Future<void> _pumpExample(WidgetTester tester) async {
   }
 }
 
-Map<String, Object> _layoutPayload() => <String, Object>{
-  'schemaVersion': 3,
-  'isAvailable': true,
-  'baseMargins': _insets(0, 0, 0, 0),
-  'horizontalMargins': _insets(80, 0, 20, 0),
-  'verticalMargins': _insets(0, 0, 0, 0),
-  'baseSafeArea': _insets(0, 0, 0, 12),
-  'horizontalSafeArea': _insets(96, 0, 48, 28),
-  'verticalSafeArea': _insets(0, 0, 0, 28),
-  'effectiveCornerRadii': <String, double>{
-    'topLeft': 62,
-    'topRight': 62,
-    'bottomLeft': 26,
-    'bottomRight': 26,
-  },
-};
+Map<String, Object> _layoutPayload({bool isFullScreen = false}) =>
+    <String, Object>{
+      'schemaVersion': 4,
+      'isAvailable': true,
+      'isPad': true,
+      'isFullScreen': isFullScreen,
+      'baseMargins': _insets(0, 0, 0, 0),
+      'horizontalMargins': _insets(80, 0, 20, 0),
+      'verticalMargins': _insets(0, 0, 0, 0),
+      'baseSafeArea': _insets(0, 0, 0, 12),
+      'horizontalSafeArea': _insets(96, 0, 48, 28),
+      'verticalSafeArea': _insets(0, 0, 0, 28),
+      'effectiveCornerRadii': <String, double>{
+        'topLeft': 62,
+        'topRight': 62,
+        'bottomLeft': 26,
+        'bottomRight': 26,
+      },
+    };
 
 Map<String, double> _insets(
   double start,

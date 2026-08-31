@@ -13,6 +13,8 @@ final class IosWindowControlLayoutData {
   /// Creates an immutable layout snapshot.
   const IosWindowControlLayoutData({
     required this.isAvailable,
+    this.isPad = false,
+    this.isFullScreen = true,
     required this.baseMargins,
     required this.horizontalMargins,
     required this.verticalMargins,
@@ -25,6 +27,8 @@ final class IosWindowControlLayoutData {
   /// A snapshot for unsupported platforms and iOS versions before iOS 26.
   static const zero = IosWindowControlLayoutData(
     isAvailable: false,
+    isPad: false,
+    isFullScreen: true,
     baseMargins: EdgeInsetsDirectional.zero,
     horizontalMargins: EdgeInsetsDirectional.zero,
     verticalMargins: EdgeInsetsDirectional.zero,
@@ -36,6 +40,17 @@ final class IosWindowControlLayoutData {
 
   /// Whether UIKit layout regions are available for the current view.
   final bool isAvailable;
+
+  /// Whether the current Flutter view uses UIKit's iPad interface idiom.
+  final bool isPad;
+
+  /// Whether the current iPadOS window scene occupies its complete screen.
+  ///
+  /// UIKit does not expose its Mac Catalyst `UIWindowScene.isFullScreen`
+  /// property on iPadOS. The native implementation compares the scene and
+  /// screen coordinate spaces exactly, without size or inset thresholds.
+  /// Unsupported platforms conservatively report `true`.
+  final bool isFullScreen;
 
   /// The view's ordinary directional layout margins.
   final EdgeInsetsDirectional baseMargins;
@@ -100,6 +115,16 @@ final class IosWindowControlLayoutData {
       horizontalAvoidance != EdgeInsetsDirectional.zero ||
       verticalAvoidance != EdgeInsetsDirectional.zero;
 
+  /// Whether horizontal avoidance belongs to an iPad windowed scene.
+  ///
+  /// This excludes ordinary iPhone corner adaptation and fullscreen iPad
+  /// layouts without relying on display dimensions or inset thresholds.
+  bool get hasWindowControlAvoidance =>
+      isAvailable &&
+      isPad &&
+      !isFullScreen &&
+      horizontalAvoidance != EdgeInsetsDirectional.zero;
+
   static EdgeInsetsDirectional _difference(
     EdgeInsetsDirectional adapted,
     EdgeInsetsDirectional base,
@@ -115,6 +140,8 @@ final class IosWindowControlLayoutData {
       identical(this, other) ||
       other is IosWindowControlLayoutData &&
           other.isAvailable == isAvailable &&
+          other.isPad == isPad &&
+          other.isFullScreen == isFullScreen &&
           other.baseMargins == baseMargins &&
           other.horizontalMargins == horizontalMargins &&
           other.verticalMargins == verticalMargins &&
@@ -126,6 +153,8 @@ final class IosWindowControlLayoutData {
   @override
   int get hashCode => Object.hash(
     isAvailable,
+    isPad,
+    isFullScreen,
     baseMargins,
     horizontalMargins,
     verticalMargins,
@@ -139,6 +168,8 @@ final class IosWindowControlLayoutData {
   String toString() =>
       'IosWindowControlLayoutData('
       'isAvailable: $isAvailable, '
+      'isPad: $isPad, '
+      'isFullScreen: $isFullScreen, '
       'baseMargins: $baseMargins, '
       'horizontalMargins: $horizontalMargins, '
       'verticalMargins: $verticalMargins, '

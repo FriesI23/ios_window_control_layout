@@ -17,9 +17,30 @@ extension IosWindowControlLayoutPlugin {
             )
             return
         }
+        guard let windowScene = view.window?.windowScene else {
+            result(
+                FlutterError(
+                    code: "window_scene_unavailable",
+                    message: "The Flutter view is not attached to a window scene.",
+                    details: nil
+                )
+            )
+            return
+        }
 
         view.layoutIfNeeded()
+        let sceneCoordinateSpace = windowScene.effectiveGeometry.coordinateSpace
+        let screenCoordinateSpace = windowScene.screen.coordinateSpace
+        let sceneBoundsInScreen = sceneCoordinateSpace.convert(
+            sceneCoordinateSpace.bounds,
+            to: screenCoordinateSpace
+        )
         let payload = Self.queryLayout(
+            isPad: view.traitCollection.userInterfaceIdiom == .pad,
+            isFullScreen: Self.isFullScreen(
+                sceneBoundsInScreen: sceneBoundsInScreen,
+                screenBounds: screenCoordinateSpace.bounds
+            ),
             baseMargins: view.directionalEdgeInsets(for: .margins()),
             horizontalMargins: view.directionalEdgeInsets(
                 for: .margins(cornerAdaptation: .horizontal)
@@ -44,7 +65,20 @@ extension IosWindowControlLayoutPlugin {
         result(payload.encode())
     }
 
+    /// iPadOS does not expose `UIWindowScene.isFullScreen`; that property is
+    /// supported only by Mac Catalyst. A scene is fullscreen when its complete
+    /// coordinate-space bounds match the current coordinate space of its
+    /// associated screen.
+    static func isFullScreen(
+        sceneBoundsInScreen: CGRect,
+        screenBounds: CGRect
+    ) -> Bool {
+        sceneBoundsInScreen.standardized.equalTo(screenBounds.standardized)
+    }
+
     static func queryLayout(
+        isPad: Bool,
+        isFullScreen: Bool,
         baseMargins: NSDirectionalEdgeInsets,
         horizontalMargins: NSDirectionalEdgeInsets,
         verticalMargins: NSDirectionalEdgeInsets,
@@ -55,6 +89,8 @@ extension IosWindowControlLayoutPlugin {
     ) -> LayoutPayload {
         LayoutPayload(
             isAvailable: true,
+            isPad: isPad,
+            isFullScreen: isFullScreen,
             baseMargins: DirectionalInsetsPayload(baseMargins),
             horizontalMargins: DirectionalInsetsPayload(horizontalMargins),
             verticalMargins: DirectionalInsetsPayload(verticalMargins),

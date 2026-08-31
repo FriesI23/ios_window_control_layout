@@ -22,13 +22,15 @@ void main() {
         .setMockMethodCallHandler(channel, null);
   });
 
-  test('decodes schema v3 margins, safe areas, and corner radii', () async {
+  test('decodes schema v4 window state and geometry', () async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
           expect(call.method, 'queryLayout');
           return <String, Object>{
-            'schemaVersion': 3,
+            'schemaVersion': 4,
             'isAvailable': true,
+            'isPad': true,
+            'isFullScreen': false,
             'baseMargins': _insets(16, 12, 20, 8),
             'horizontalMargins': _insets(72, 12, 20, 8),
             'verticalMargins': _insets(16, 52, 20, 8),
@@ -42,6 +44,9 @@ void main() {
     final data = await platform.query();
 
     expect(data.isAvailable, isTrue);
+    expect(data.isPad, isTrue);
+    expect(data.isFullScreen, isFalse);
+    expect(data.hasWindowControlAvoidance, isTrue);
     expect(
       data.horizontalAvoidance,
       const EdgeInsetsDirectional.only(start: 56),
@@ -97,7 +102,7 @@ void main() {
     'horizontalSafeArea',
     'verticalSafeArea',
   ]) {
-    test('rejects schema v3 payload missing $field', () {
+    test('rejects schema v4 payload missing $field', () {
       final payload = _validPayload()..remove(field);
       expect(() => LayoutPayload.decode(payload), _throwsInvalidData);
     });
@@ -107,6 +112,16 @@ void main() {
     final payload = _validPayload()..remove('effectiveCornerRadii');
     expect(() => LayoutPayload.decode(payload), _throwsInvalidData);
   });
+
+  for (final field in const ['isAvailable', 'isPad', 'isFullScreen']) {
+    test('rejects a missing or malformed $field', () {
+      final missing = _validPayload()..remove(field);
+      expect(() => LayoutPayload.decode(missing), _throwsInvalidData);
+
+      final malformed = _validPayload()..[field] = 'false';
+      expect(() => LayoutPayload.decode(malformed), _throwsInvalidData);
+    });
+  }
 
   for (final invalid in <Object>[
     -1,
@@ -145,8 +160,10 @@ final _throwsInvalidData = throwsA(
 );
 
 Map<String, Object> _validPayload() => <String, Object>{
-  'schemaVersion': 3,
+  'schemaVersion': 4,
   'isAvailable': true,
+  'isPad': true,
+  'isFullScreen': false,
   'baseMargins': _insets(0, 0, 0, 0),
   'horizontalMargins': _insets(0, 0, 0, 0),
   'verticalMargins': _insets(0, 0, 0, 0),

@@ -79,6 +79,9 @@ final layout = await IosWindowControlLayout.query();
 | 属性 | 用途 |
 | --- | --- |
 | `isAvailable` | 判断当前窗口是否能提供 iOS 26 的布局参考；为 `false` 时继续使用应用原有布局即可。 |
+| `isPad` | 判断当前 Flutter view 是否使用 UIKit 的 iPad interface idiom。 |
+| `isFullScreen` | 通过 scene 与 screen 坐标空间是否完整重合，判断当前 iPadOS scene 是否全屏；不使用尺寸阈值。 |
+| `hasWindowControlAvoidance` | 判断当前窗口化 iPad 是否存在用于窗口控制按钮的额外水平避让。 |
 | `baseMargins` | UIKit 常规的内容边距，代表不考虑特殊圆角时的标准内容区。 |
 | `horizontalMargins` | 已照顾左右圆角的内容区，适合 AppBar 两侧操作、导航控件、侧边栏和靠窗口两侧对齐的内容。 |
 | `verticalMargins` | 已照顾上下圆角的内容区，适合靠近窗口顶部或底部排布的内容。 |

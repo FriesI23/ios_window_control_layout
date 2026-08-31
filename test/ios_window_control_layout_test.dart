@@ -66,7 +66,10 @@ void main() {
 
   test('zero data is unavailable and has no avoidance', () {
     expect(IosWindowControlLayoutData.zero.isAvailable, isFalse);
+    expect(IosWindowControlLayoutData.zero.isPad, isFalse);
+    expect(IosWindowControlLayoutData.zero.isFullScreen, isTrue);
     expect(IosWindowControlLayoutData.zero.hasAvoidance, isFalse);
+    expect(IosWindowControlLayoutData.zero.hasWindowControlAvoidance, isFalse);
     expect(
       IosWindowControlLayoutData.zero.baseSafeArea,
       EdgeInsetsDirectional.zero,
@@ -82,6 +85,56 @@ void main() {
     expect(
       IosWindowControlLayoutData.zero.effectiveCornerRadii,
       BorderRadius.zero,
+    );
+  });
+
+  test('window-control avoidance requires an available windowed iPad', () {
+    IosWindowControlLayoutData data({
+      required bool isAvailable,
+      required bool isPad,
+      required bool isFullScreen,
+    }) => IosWindowControlLayoutData(
+      isAvailable: isAvailable,
+      isPad: isPad,
+      isFullScreen: isFullScreen,
+      baseMargins: EdgeInsetsDirectional.zero,
+      horizontalMargins: const EdgeInsetsDirectional.only(start: 40),
+      verticalMargins: EdgeInsetsDirectional.zero,
+    );
+
+    expect(
+      data(
+        isAvailable: true,
+        isPad: false,
+        isFullScreen: true,
+      ).hasWindowControlAvoidance,
+      isFalse,
+      reason: 'iPhone corner adaptation is not a window-control region',
+    );
+    expect(
+      data(
+        isAvailable: true,
+        isPad: true,
+        isFullScreen: true,
+      ).hasWindowControlAvoidance,
+      isFalse,
+      reason: 'fullscreen iPad has no windowed controls',
+    );
+    expect(
+      data(
+        isAvailable: true,
+        isPad: true,
+        isFullScreen: false,
+      ).hasWindowControlAvoidance,
+      isTrue,
+    );
+    expect(
+      data(
+        isAvailable: false,
+        isPad: true,
+        isFullScreen: false,
+      ).hasWindowControlAvoidance,
+      isFalse,
     );
   });
 
@@ -162,11 +215,11 @@ void main() {
     await tester.pumpWidget(
       const MaterialApp(home: IosWindowControlLayout(child: _LayoutValue())),
     );
-    expect(find.text('false:0.0:0.0'), findsOneWidget);
+    expect(find.text('false:false:true:0.0:0.0'), findsOneWidget);
 
     await tester.pump();
     expect(queryCount, 1);
-    expect(find.text('true:32.0:20.0'), findsOneWidget);
+    expect(find.text('true:false:true:32.0:20.0'), findsOneWidget);
   });
 
   testWidgets('explicit refresh coalesces calls in the same microtask', (
@@ -222,6 +275,38 @@ void main() {
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pump();
     expect(queryCount, 3);
+  });
+
+  testWidgets('metrics refreshes windowed and fullscreen state changes', (
+    tester,
+  ) async {
+    var isFullScreen = false;
+    IosWindowControlLayoutPlatform.instance = _FakePlatform(
+      () async => IosWindowControlLayoutData(
+        isAvailable: true,
+        isPad: true,
+        isFullScreen: isFullScreen,
+        baseMargins: EdgeInsetsDirectional.zero,
+        horizontalMargins: const EdgeInsetsDirectional.only(start: 40),
+        verticalMargins: EdgeInsetsDirectional.zero,
+      ),
+    );
+
+    await tester.pumpWidget(
+      const MaterialApp(home: IosWindowControlLayout(child: _LayoutValue())),
+    );
+    await tester.pump();
+    expect(find.text('true:true:false:40.0:0.0'), findsOneWidget);
+
+    isFullScreen = true;
+    tester.binding.handleMetricsChanged();
+    await tester.pump();
+    expect(find.text('true:true:true:40.0:0.0'), findsOneWidget);
+
+    isFullScreen = false;
+    tester.binding.handleMetricsChanged();
+    await tester.pump();
+    expect(find.text('true:true:false:40.0:0.0'), findsOneWidget);
   });
 
   testWidgets('a stale query cannot replace a newer result', (tester) async {
@@ -382,7 +467,8 @@ class _LayoutValue extends StatelessWidget {
   Widget build(BuildContext context) {
     final data = IosWindowControlLayout.of(context);
     return Text(
-      '${data.isAvailable}:${data.horizontalAvoidance.start}:'
+      '${data.isAvailable}:${data.isPad}:${data.isFullScreen}:'
+      '${data.horizontalAvoidance.start}:'
       '${data.horizontalSafeAreaAvoidance.start}',
     );
   }

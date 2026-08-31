@@ -65,10 +65,12 @@ struct CornerRadiiPayload {
 /// Versioned payload containing only StandardMessageCodec-compatible values.
 /// Keep this structure synchronized with Dart's `LayoutPayload`.
 struct LayoutPayload {
-    static let schemaVersion = 3
+    static let schemaVersion = 4
 
     static let unavailable = LayoutPayload(
         isAvailable: false,
+        isPad: false,
+        isFullScreen: true,
         baseMargins: DirectionalInsetsPayload(.zero),
         horizontalMargins: DirectionalInsetsPayload(.zero),
         verticalMargins: DirectionalInsetsPayload(.zero),
@@ -79,6 +81,8 @@ struct LayoutPayload {
     )
 
     let isAvailable: Bool
+    let isPad: Bool
+    let isFullScreen: Bool
     let baseMargins: DirectionalInsetsPayload
     let horizontalMargins: DirectionalInsetsPayload
     let verticalMargins: DirectionalInsetsPayload
@@ -91,6 +95,8 @@ struct LayoutPayload {
         [
             "schemaVersion": Self.schemaVersion,
             "isAvailable": isAvailable,
+            "isPad": isPad,
+            "isFullScreen": isFullScreen,
             "baseMargins": baseMargins.encode(),
             "horizontalMargins": horizontalMargins.encode(),
             "verticalMargins": verticalMargins.encode(),

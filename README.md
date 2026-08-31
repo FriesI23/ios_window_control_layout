@@ -80,6 +80,9 @@ final layout = await IosWindowControlLayout.query();
 | Property | Purpose |
 | --- | --- |
 | `isAvailable` | Tells you whether the current window provides the iOS 26 layout guides. Use your normal layout when it is `false`. |
+| `isPad` | Tells you whether the current Flutter view uses UIKit's iPad interface idiom. |
+| `isFullScreen` | Tells you whether the current iPadOS scene occupies its complete screen, using exact scene/screen coordinate-space coverage rather than size thresholds. |
+| `hasWindowControlAvoidance` | Tells you whether a windowed iPad currently has additional horizontal avoidance for window controls. |
 | `baseMargins` | UIKit's ordinary content margins. This is the reference for content that does not need special corner treatment. |
 | `horizontalMargins` | A content guide adjusted for the left and right corners. It suits AppBar actions, navigation controls, and content aligned to either side of the window. |
 | `verticalMargins` | A content guide adjusted for the top and bottom corners. It suits content that runs close to the upper or lower edge of the window. |

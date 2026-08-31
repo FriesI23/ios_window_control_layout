@@ -116,6 +116,19 @@ class _ExamplePageState extends State<_ExamplePage> {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
+            Text(
+              'Interface idiom: ${data.isPad ? 'iPad' : 'not iPad'}',
+              key: const ValueKey('interface-idiom-status'),
+            ),
+            Text(
+              'Window mode: ${data.isFullScreen ? 'fullscreen' : 'windowed'}',
+              key: const ValueKey('window-mode-status'),
+            ),
+            Text(
+              'iPad window-control avoidance: '
+              '${data.hasWindowControlAvoidance ? 'present' : 'absent'}',
+              key: const ValueKey('window-control-status'),
+            ),
             Text('Reported horizontal avoidance: ${data.horizontalAvoidance}'),
             Text('Applied horizontal avoidance: $avoidance'),
             Text('Vertical avoidance: ${data.verticalAvoidance}'),
@@ -139,7 +152,8 @@ class _ExamplePageState extends State<_ExamplePage> {
             const Text(
               'The leading button and trailing refresh button are intentionally '
               'placed at the toolbar edges. Resize the iPad window to verify '
-              'that both remain outside the system window controls.',
+              'that both remain outside the system window controls and that '
+              'the window mode above updates between fullscreen and windowed.',
             ),
           ],
         ),

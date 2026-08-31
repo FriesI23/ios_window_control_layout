@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0
+
+- Expose the current UIKit interface idiom and whether the iPadOS scene
+  exactly covers its screen coordinate space.
+- Distinguish iPad window-control avoidance from ordinary device corner
+  adaptation.
+- Upgrade the native wire payload to schema version 4.
+
 ## 0.3.0
 
 - Expose the current UIKit view's physical effective corner radii on iOS 26.
