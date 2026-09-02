@@ -39,6 +39,7 @@ class _ExamplePage extends StatefulWidget {
 class _ExamplePageState extends State<_ExamplePage> {
   _AppBarStyle _style = _AppBarStyle.cupertino;
   bool _applyWindowControlLayout = true;
+  bool _useRtl = false;
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +47,7 @@ class _ExamplePageState extends State<_ExamplePage> {
     final flutterSafeArea = MediaQuery.paddingOf(context);
     final avoidance = _applyWindowControlLayout
         ? data.horizontalAvoidance
-        : EdgeInsetsDirectional.zero;
+        : EdgeInsets.zero;
     final bottomControlPadding = _applyWindowControlLayout
         ? _bottomBoundaryPadding(
             flutterSafeArea: flutterSafeArea,
@@ -54,6 +55,27 @@ class _ExamplePageState extends State<_ExamplePage> {
             cornerRadii: data.effectiveCornerRadii,
           )
         : EdgeInsets.zero;
+    return Directionality(
+      textDirection: _useRtl ? TextDirection.rtl : TextDirection.ltr,
+      child: Builder(
+        builder: (context) => _buildPage(
+          context,
+          data: data,
+          flutterSafeArea: flutterSafeArea,
+          avoidance: avoidance,
+          bottomControlPadding: bottomControlPadding,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPage(
+    BuildContext context, {
+    required IosWindowControlLayoutData data,
+    required EdgeInsets flutterSafeArea,
+    required EdgeInsets avoidance,
+    required EdgeInsets bottomControlPadding,
+  }) {
     return Scaffold(
       appBar: switch (_style) {
         _AppBarStyle.material => _buildMaterialAppBar(context, avoidance),
@@ -106,6 +128,18 @@ class _ExamplePageState extends State<_ExamplePage> {
               value: _applyWindowControlLayout,
               onChanged: (value) {
                 setState(() => _applyWindowControlLayout = value);
+              },
+            ),
+            SwitchListTile(
+              key: const ValueKey('flutter-rtl-switch'),
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Use Flutter RTL layout'),
+              subtitle: const Text(
+                'The reported physical window geometry does not flip',
+              ),
+              value: _useRtl,
+              onChanged: (value) {
+                setState(() => _useRtl = value);
               },
             ),
             const SizedBox(height: 24),
@@ -193,14 +227,21 @@ class _ExamplePageState extends State<_ExamplePage> {
 
   PreferredSizeWidget _buildMaterialAppBar(
     BuildContext context,
-    EdgeInsetsDirectional avoidance,
+    EdgeInsets avoidance,
   ) {
+    final direction = Directionality.of(context);
+    final leadingAvoidance = direction == TextDirection.ltr
+        ? avoidance.left
+        : avoidance.right;
+    final trailingAvoidance = direction == TextDirection.ltr
+        ? avoidance.right
+        : avoidance.left;
     return AppBar(
       centerTitle: true,
-      leadingWidth: kToolbarHeight + _toolbarEdgePadding + avoidance.start,
+      leadingWidth: kToolbarHeight + _toolbarEdgePadding + leadingAvoidance,
       leading: Padding(
         padding: EdgeInsetsDirectional.only(
-          start: _toolbarEdgePadding + avoidance.start,
+          start: _toolbarEdgePadding + leadingAvoidance,
         ),
         child: IconButton(
           key: const ValueKey('material-leading'),
@@ -213,7 +254,7 @@ class _ExamplePageState extends State<_ExamplePage> {
       actions: [
         Padding(
           padding: EdgeInsetsDirectional.only(
-            end: _toolbarEdgePadding + avoidance.end,
+            end: _toolbarEdgePadding + trailingAvoidance,
           ),
           child: IconButton(
             key: const ValueKey('material-trailing'),
@@ -228,13 +269,20 @@ class _ExamplePageState extends State<_ExamplePage> {
 
   PreferredSizeWidget _buildCupertinoAppBar(
     BuildContext context,
-    EdgeInsetsDirectional avoidance,
+    EdgeInsets avoidance,
   ) {
+    final direction = Directionality.of(context);
+    final startAvoidance = direction == TextDirection.ltr
+        ? avoidance.left
+        : avoidance.right;
+    final endAvoidance = direction == TextDirection.ltr
+        ? avoidance.right
+        : avoidance.left;
     return CupertinoNavigationBar(
       automaticallyImplyLeading: false,
       padding: EdgeInsetsDirectional.only(
-        start: _toolbarEdgePadding + avoidance.start,
-        end: _toolbarEdgePadding + avoidance.end,
+        start: _toolbarEdgePadding + startAvoidance,
+        end: _toolbarEdgePadding + endAvoidance,
       ),
       leading: CupertinoButton(
         key: const ValueKey('cupertino-leading'),
@@ -244,6 +292,7 @@ class _ExamplePageState extends State<_ExamplePage> {
       ),
       middle: const Text('Cupertino'),
       trailing: CupertinoButton(
+        key: const ValueKey('cupertino-trailing'),
         padding: EdgeInsets.zero,
         onPressed: () => unawaited(IosWindowControlLayout.refresh(context)),
         child: const Icon(CupertinoIcons.refresh),
@@ -259,7 +308,7 @@ class _ExamplePageState extends State<_ExamplePage> {
 
 EdgeInsets _bottomBoundaryPadding({
   required EdgeInsets flutterSafeArea,
-  required EdgeInsetsDirectional verticalSafeArea,
+  required EdgeInsets verticalSafeArea,
   required BorderRadius cornerRadii,
 }) {
   final adaptedBottom = math.max(
@@ -308,12 +357,11 @@ class _InsetsPreview extends StatelessWidget {
   });
 
   final String title;
-  final EdgeInsetsDirectional insets;
+  final EdgeInsets insets;
   final Color color;
 
   @override
   Widget build(BuildContext context) {
-    final resolved = insets.resolve(Directionality.of(context));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -321,10 +369,10 @@ class _InsetsPreview extends StatelessWidget {
         const SizedBox(height: 8),
         LayoutBuilder(
           builder: (context, constraints) {
-            final leadingWidth = math.min(resolved.left, constraints.maxWidth);
-            final trailingWidth = math.min(
-              resolved.right,
-              math.max(0.0, constraints.maxWidth - leadingWidth),
+            final leftWidth = math.min(insets.left, constraints.maxWidth);
+            final rightWidth = math.min(
+              insets.right,
+              math.max(0.0, constraints.maxWidth - leftWidth),
             );
             return Container(
               height: 48,
@@ -334,9 +382,9 @@ class _InsetsPreview extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Container(width: leadingWidth, color: color),
+                  Container(width: leftWidth, color: color),
                   const Expanded(child: Center(child: Text('safe content'))),
-                  Container(width: trailingWidth, color: color),
+                  Container(width: rightWidth, color: color),
                 ],
               ),
             );

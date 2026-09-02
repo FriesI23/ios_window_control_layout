@@ -54,6 +54,7 @@ class RunnerTests: XCTestCase {
     let payload = IosWindowControlLayoutPlugin.queryLayout(
       isPad: true,
       isFullScreen: false,
+      layoutDirection: .leftToRight,
       baseMargins: insets(1),
       horizontalMargins: insets(5),
       verticalMargins: insets(9),
@@ -66,19 +67,20 @@ class RunnerTests: XCTestCase {
     XCTAssertTrue(payload.isAvailable)
     XCTAssertTrue(payload.isPad)
     XCTAssertFalse(payload.isFullScreen)
-    XCTAssertEqual(payload.baseMargins.start, 2)
+    XCTAssertEqual(payload.baseMargins.left, 2)
     XCTAssertEqual(payload.horizontalMargins.top, 5)
-    XCTAssertEqual(payload.verticalMargins.end, 12)
+    XCTAssertEqual(payload.verticalMargins.right, 12)
     XCTAssertEqual(payload.baseSafeArea.bottom, 15)
-    XCTAssertEqual(payload.horizontalSafeArea.start, 18)
-    XCTAssertEqual(payload.verticalSafeArea.end, 24)
+    XCTAssertEqual(payload.horizontalSafeArea.left, 18)
+    XCTAssertEqual(payload.verticalSafeArea.right, 24)
     XCTAssertEqual(payload.effectiveCornerRadii.bottomRight, 28)
   }
 
-  func testEncodedPayloadHasCorrectFieldsAndDirectionalValues() {
+  func testEncodedPayloadHasCorrectFieldsAndPhysicalValues() {
     let layout = IosWindowControlLayoutPlugin.queryLayout(
       isPad: true,
       isFullScreen: false,
+      layoutDirection: .leftToRight,
       baseMargins: insets(1),
       horizontalMargins: insets(5),
       verticalMargins: insets(9),
@@ -88,7 +90,7 @@ class RunnerTests: XCTestCase {
       effectiveCornerRadii: radii(25)
     ).encode()
 
-    XCTAssertEqual(layout["schemaVersion"] as? Int, 4)
+    XCTAssertEqual(layout["schemaVersion"] as? Int, 5)
     XCTAssertEqual(layout["isAvailable"] as? Bool, true)
     XCTAssertEqual(layout["isPad"] as? Bool, true)
     XCTAssertEqual(layout["isFullScreen"] as? Bool, false)
@@ -104,6 +106,29 @@ class RunnerTests: XCTestCase {
     assertInsets(layout["horizontalSafeArea"], [18, 17, 20, 19])
     assertInsets(layout["verticalSafeArea"], [22, 21, 24, 23])
     assertRadii(layout["effectiveCornerRadii"], [25, 26, 27, 28])
+  }
+
+  func testDirectionalInsetsBecomePhysicalInBothLayoutDirections() {
+    let directional = NSDirectionalEdgeInsets(
+      top: 1,
+      leading: 10,
+      bottom: 2,
+      trailing: 20
+    )
+
+    let leftToRight = PhysicalInsetsPayload(
+      directional,
+      layoutDirection: .leftToRight
+    )
+    XCTAssertEqual(leftToRight.left, 10)
+    XCTAssertEqual(leftToRight.right, 20)
+
+    let rightToLeft = PhysicalInsetsPayload(
+      directional,
+      layoutDirection: .rightToLeft
+    )
+    XCTAssertEqual(rightToLeft.left, 20)
+    XCTAssertEqual(rightToLeft.right, 10)
   }
 
   private func insets(_ value: CGFloat) -> NSDirectionalEdgeInsets {
@@ -126,9 +151,9 @@ class RunnerTests: XCTestCase {
 
   private func assertInsets(_ value: Any?, _ expected: [Double]) {
     let insets = value as? [String: Double]
-    XCTAssertEqual(insets?["start"], expected[0])
+    XCTAssertEqual(insets?["left"], expected[0])
     XCTAssertEqual(insets?["top"], expected[1])
-    XCTAssertEqual(insets?["end"], expected[2])
+    XCTAssertEqual(insets?["right"], expected[2])
     XCTAssertEqual(insets?["bottom"], expected[3])
   }
 
@@ -145,7 +170,7 @@ class RunnerTests: XCTestCase {
     isPad: Bool,
     isFullScreen: Bool
   ) {
-    XCTAssertEqual(layout?["schemaVersion"] as? Int, 4)
+    XCTAssertEqual(layout?["schemaVersion"] as? Int, 5)
     XCTAssertEqual(layout?["isAvailable"] as? Bool, false)
     XCTAssertEqual(layout?["isPad"] as? Bool, isPad)
     XCTAssertEqual(layout?["isFullScreen"] as? Bool, isFullScreen)

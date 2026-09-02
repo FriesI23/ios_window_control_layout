@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.0
+
+> **Breaking change:** Layout margins, safe areas, and avoidance values now use
+> physical `EdgeInsets`. Replace `start`/`end` access with `left`/`right` and do
+> not resolve these values against Flutter's `Directionality`. Wire schema v5
+> strictly rejects schema v4 payloads.
+
+- Report layout margins, safe areas, and avoidance as physical `EdgeInsets`
+  whose left and right sides do not flip with Flutter's text direction.
+- Resolve UIKit's directional layout regions with the root view's effective
+  interface direction and upgrade the native wire payload to schema version 5.
+- Add an RTL example and migration guidance for assigning physical avoidance
+  to Flutter's logical leading and trailing controls.
+
 ## 0.4.1
 
 - Preserve the current UIKit interface idiom and window state on iOS versions

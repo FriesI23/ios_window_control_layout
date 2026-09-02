@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -105,6 +106,46 @@ void main() {
     expect(boundaryPadding.padding, const EdgeInsets.only(bottom: 28));
   });
 
+  testWidgets('Material keeps physical left avoidance in Flutter RTL', (
+    tester,
+  ) async {
+    await _pumpExample(tester);
+    await tester.tap(find.byKey(const ValueKey('app-bar-style-menu')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('select-material-app-bar')));
+    await tester.pumpAndSettle();
+    await _enableRtl(tester);
+
+    final appBar = tester.getRect(find.byType(AppBar));
+    final leading = tester.getRect(
+      find.byKey(const ValueKey('material-leading')),
+    );
+    final trailing = tester.getRect(
+      find.byKey(const ValueKey('material-trailing')),
+    );
+
+    expect(leading.right, lessThanOrEqualTo(appBar.right - 36));
+    expect(trailing.left, greaterThanOrEqualTo(appBar.left + 96));
+  });
+
+  testWidgets('Cupertino keeps physical left avoidance in Flutter RTL', (
+    tester,
+  ) async {
+    await _pumpExample(tester);
+    await _enableRtl(tester);
+
+    final navigationBar = tester.getRect(find.byType(CupertinoNavigationBar));
+    final leading = tester.getRect(
+      find.byKey(const ValueKey('cupertino-leading')),
+    );
+    final trailing = tester.getRect(
+      find.byKey(const ValueKey('cupertino-trailing')),
+    );
+
+    expect(leading.right, lessThanOrEqualTo(navigationBar.right - 36));
+    expect(trailing.left, greaterThanOrEqualTo(navigationBar.left + 96));
+  });
+
   testWidgets('shows live iPad fullscreen and window-control status', (
     tester,
   ) async {
@@ -140,9 +181,16 @@ Future<void> _pumpExample(WidgetTester tester) async {
   }
 }
 
+Future<void> _enableRtl(WidgetTester tester) async {
+  final rtlSwitch = find.byKey(const ValueKey('flutter-rtl-switch'));
+  await tester.ensureVisible(rtlSwitch);
+  await tester.tap(rtlSwitch);
+  await tester.pumpAndSettle();
+}
+
 Map<String, Object> _layoutPayload({bool isFullScreen = false}) =>
     <String, Object>{
-      'schemaVersion': 4,
+      'schemaVersion': 5,
       'isAvailable': true,
       'isPad': true,
       'isFullScreen': isFullScreen,
@@ -161,8 +209,13 @@ Map<String, Object> _layoutPayload({bool isFullScreen = false}) =>
     };
 
 Map<String, double> _insets(
-  double start,
+  double left,
   double top,
-  double end,
+  double right,
   double bottom,
-) => <String, double>{'start': start, 'top': top, 'end': end, 'bottom': bottom};
+) => <String, double>{
+  'left': left,
+  'top': top,
+  'right': right,
+  'bottom': bottom,
+};

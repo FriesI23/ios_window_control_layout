@@ -22,12 +22,12 @@ void main() {
         .setMockMethodCallHandler(channel, null);
   });
 
-  test('decodes schema v4 window state and geometry', () async {
+  test('decodes schema v5 window state and physical geometry', () async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
           expect(call.method, 'queryLayout');
           return <String, Object>{
-            'schemaVersion': 4,
+            'schemaVersion': 5,
             'isAvailable': true,
             'isPad': true,
             'isFullScreen': false,
@@ -47,19 +47,10 @@ void main() {
     expect(data.isPad, isTrue);
     expect(data.isFullScreen, isFalse);
     expect(data.hasWindowControlAvoidance, isTrue);
-    expect(
-      data.horizontalAvoidance,
-      const EdgeInsetsDirectional.only(start: 56),
-    );
-    expect(data.verticalAvoidance, const EdgeInsetsDirectional.only(top: 40));
-    expect(
-      data.horizontalSafeAreaAvoidance,
-      const EdgeInsetsDirectional.only(start: 20),
-    );
-    expect(
-      data.verticalSafeAreaAvoidance,
-      const EdgeInsetsDirectional.only(top: 30),
-    );
+    expect(data.horizontalAvoidance, const EdgeInsets.only(left: 56));
+    expect(data.verticalAvoidance, const EdgeInsets.only(top: 40));
+    expect(data.horizontalSafeAreaAvoidance, const EdgeInsets.only(left: 20));
+    expect(data.verticalSafeAreaAvoidance, const EdgeInsets.only(top: 30));
     expect(
       data.effectiveCornerRadii,
       const BorderRadius.only(
@@ -71,9 +62,9 @@ void main() {
     );
   });
 
-  test('payload rejects an unsupported schema version', () {
+  test('payload rejects the previous schema version', () {
     expect(
-      () => LayoutPayload.decode(<String, Object>{'schemaVersion': 1}),
+      () => LayoutPayload.decode(<String, Object>{'schemaVersion': 4}),
       throwsA(
         isA<PlatformException>().having(
           (error) => error.code,
@@ -83,6 +74,18 @@ void main() {
       ),
     );
   });
+
+  for (final edge in const ['left', 'top', 'right', 'bottom']) {
+    test('rejects a physical inset missing $edge', () {
+      final payload = _validPayload();
+      final insets = Map<String, Object>.from(
+        payload['baseMargins']! as Map<String, double>,
+      )..remove(edge);
+      payload['baseMargins'] = insets;
+
+      expect(() => LayoutPayload.decode(payload), _throwsInvalidData);
+    });
+  }
 
   test('returns zero without invoking a channel outside iOS', () async {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
@@ -102,7 +105,7 @@ void main() {
     'horizontalSafeArea',
     'verticalSafeArea',
   ]) {
-    test('rejects schema v4 payload missing $field', () {
+    test('rejects schema v5 payload missing $field', () {
       final payload = _validPayload()..remove(field);
       expect(() => LayoutPayload.decode(payload), _throwsInvalidData);
     });
@@ -144,7 +147,7 @@ void main() {
       final payload = _validPayload();
       payload['horizontalSafeArea'] = <String, Object>{
         ..._insets(0, 0, 0, 0),
-        'start': invalid,
+        'left': invalid,
       };
       expect(() => LayoutPayload.decode(payload), _throwsInvalidData);
     });
@@ -160,7 +163,7 @@ final _throwsInvalidData = throwsA(
 );
 
 Map<String, Object> _validPayload() => <String, Object>{
-  'schemaVersion': 4,
+  'schemaVersion': 5,
   'isAvailable': true,
   'isPad': true,
   'isFullScreen': false,
@@ -174,11 +177,16 @@ Map<String, Object> _validPayload() => <String, Object>{
 };
 
 Map<String, double> _insets(
-  double start,
+  double left,
   double top,
-  double end,
+  double right,
   double bottom,
-) => <String, double>{'start': start, 'top': top, 'end': end, 'bottom': bottom};
+) => <String, double>{
+  'left': left,
+  'top': top,
+  'right': right,
+  'bottom': bottom,
+};
 
 Map<String, double> _radii(
   double topLeft,

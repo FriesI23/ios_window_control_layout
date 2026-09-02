@@ -60,6 +60,11 @@ final floatingControlInsets = layout.horizontalSafeArea;
 final windowCorners = layout.effectiveCornerRadii;
 ```
 
+All inset properties are physical `EdgeInsets`. Their `left` and `right`
+values describe UIKit's actual window geometry and never flip when Flutter's
+`Directionality` changes. When assigning them to logical leading or trailing
+controls, select the matching physical side explicitly.
+
 `of` and `maybeOf` establish an inherited dependency. `read` and `maybeRead`
 perform a non-listening lookup. The layout refreshes after its first frame, on
 window metric changes, and when the application resumes. An application can
@@ -108,6 +113,24 @@ versions before 26, `isPad` and `isFullScreen` still describe the current view
 and scene, while the unavailable layout-region and corner values are zero.
 Other platforms return the zero snapshot.
 
+### Migrating from 0.4.x
+
+Version 0.5.0 replaces every public `EdgeInsetsDirectional` layout value with
+physical `EdgeInsets`. Replace `.start` and `.end` with `.left` and `.right`
+when applying physical padding. For logical AppBar slots, map the physical
+sides through Flutter's current text direction:
+
+```dart
+final avoidance = layout.horizontalAvoidance;
+final direction = Directionality.of(context);
+final leadingAvoidance = direction == TextDirection.ltr
+    ? avoidance.left
+    : avoidance.right;
+final trailingAvoidance = direction == TextDirection.ltr
+    ? avoidance.right
+    : avoidance.left;
+```
+
 <details>
 <summary>Complete example</summary>
 
@@ -149,6 +172,13 @@ class ExamplePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final layout = IosWindowControlLayout.of(context);
     final avoidance = layout.horizontalAvoidance;
+    final direction = Directionality.of(context);
+    final leadingAvoidance = direction == TextDirection.ltr
+        ? avoidance.left
+        : avoidance.right;
+    final trailingAvoidance = direction == TextDirection.ltr
+        ? avoidance.right
+        : avoidance.left;
     final flutterSafeArea = MediaQuery.viewPaddingOf(context);
     final adaptedBottom = math.max(
       flutterSafeArea.bottom,
@@ -172,10 +202,10 @@ class ExamplePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        leadingWidth: kToolbarHeight + _edgePadding + avoidance.start,
+        leadingWidth: kToolbarHeight + _edgePadding + leadingAvoidance,
         leading: Padding(
           padding: EdgeInsetsDirectional.only(
-            start: _edgePadding + avoidance.start,
+            start: _edgePadding + leadingAvoidance,
           ),
           child: IconButton(
             onPressed: () {},
@@ -186,7 +216,7 @@ class ExamplePage extends StatelessWidget {
         actions: [
           Padding(
             padding: EdgeInsetsDirectional.only(
-              end: _edgePadding + avoidance.end,
+              end: _edgePadding + trailingAvoidance,
             ),
             child: IconButton(
               onPressed: () => IosWindowControlLayout.refresh(context),
@@ -196,9 +226,9 @@ class ExamplePage extends StatelessWidget {
         ],
       ),
       body: Padding(
-        padding: EdgeInsetsDirectional.only(
-          start: _edgePadding + avoidance.start,
-          end: _edgePadding + avoidance.end,
+        padding: EdgeInsets.only(
+          left: _edgePadding + avoidance.left,
+          right: _edgePadding + avoidance.right,
         ),
         child: Center(
           child: Text('Available: ${layout.isAvailable}'),

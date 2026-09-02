@@ -5,18 +5,18 @@ import 'package:flutter/widgets.dart';
 
 import 'layout_data.dart';
 
-/// Directional insets in the native wire payload.
+/// Physical insets in the native wire payload.
 ///
-/// Keep this structure synchronized with Swift's `DirectionalInsetsPayload`.
-final class DirectionalInsetsPayload {
-  const DirectionalInsetsPayload({
-    required this.start,
+/// Keep this structure synchronized with Swift's `PhysicalInsetsPayload`.
+final class PhysicalInsetsPayload {
+  const PhysicalInsetsPayload({
+    required this.left,
     required this.top,
-    required this.end,
+    required this.right,
     required this.bottom,
   });
 
-  factory DirectionalInsetsPayload.decode(Object? value, String field) {
+  factory PhysicalInsetsPayload.decode(Object? value, String field) {
     final map = _expectMap(value, field);
 
     double number(String edge) {
@@ -27,21 +27,20 @@ final class DirectionalInsetsPayload {
       return value.toDouble();
     }
 
-    return DirectionalInsetsPayload(
-      start: number('start'),
+    return PhysicalInsetsPayload(
+      left: number('left'),
       top: number('top'),
-      end: number('end'),
+      right: number('right'),
       bottom: number('bottom'),
     );
   }
 
-  final double start;
+  final double left;
   final double top;
-  final double end;
+  final double right;
   final double bottom;
 
-  EdgeInsetsDirectional toInsets() =>
-      EdgeInsetsDirectional.fromSTEB(start, top, end, bottom);
+  EdgeInsets toInsets() => EdgeInsets.fromLTRB(left, top, right, bottom);
 }
 
 /// Physical corner radii in the native wire payload.
@@ -130,27 +129,27 @@ final class LayoutPayload {
       isAvailable: isAvailable,
       isPad: isPad,
       isFullScreen: isFullScreen,
-      baseMargins: DirectionalInsetsPayload.decode(
+      baseMargins: PhysicalInsetsPayload.decode(
         map[_baseMarginsField],
         _baseMarginsField,
       ),
-      horizontalMargins: DirectionalInsetsPayload.decode(
+      horizontalMargins: PhysicalInsetsPayload.decode(
         map[_horizontalMarginsField],
         _horizontalMarginsField,
       ),
-      verticalMargins: DirectionalInsetsPayload.decode(
+      verticalMargins: PhysicalInsetsPayload.decode(
         map[_verticalMarginsField],
         _verticalMarginsField,
       ),
-      baseSafeArea: DirectionalInsetsPayload.decode(
+      baseSafeArea: PhysicalInsetsPayload.decode(
         map[_baseSafeAreaField],
         _baseSafeAreaField,
       ),
-      horizontalSafeArea: DirectionalInsetsPayload.decode(
+      horizontalSafeArea: PhysicalInsetsPayload.decode(
         map[_horizontalSafeAreaField],
         _horizontalSafeAreaField,
       ),
-      verticalSafeArea: DirectionalInsetsPayload.decode(
+      verticalSafeArea: PhysicalInsetsPayload.decode(
         map[_verticalSafeAreaField],
         _verticalSafeAreaField,
       ),
@@ -161,7 +160,7 @@ final class LayoutPayload {
     );
   }
 
-  static const schemaVersion = 4;
+  static const schemaVersion = 5;
   static const _schemaVersionField = 'schemaVersion';
   static const _isAvailableField = 'isAvailable';
   static const _isPadField = 'isPad';
@@ -177,12 +176,12 @@ final class LayoutPayload {
   final bool isAvailable;
   final bool isPad;
   final bool isFullScreen;
-  final DirectionalInsetsPayload baseMargins;
-  final DirectionalInsetsPayload horizontalMargins;
-  final DirectionalInsetsPayload verticalMargins;
-  final DirectionalInsetsPayload baseSafeArea;
-  final DirectionalInsetsPayload horizontalSafeArea;
-  final DirectionalInsetsPayload verticalSafeArea;
+  final PhysicalInsetsPayload baseMargins;
+  final PhysicalInsetsPayload horizontalMargins;
+  final PhysicalInsetsPayload verticalMargins;
+  final PhysicalInsetsPayload baseSafeArea;
+  final PhysicalInsetsPayload horizontalSafeArea;
+  final PhysicalInsetsPayload verticalSafeArea;
   final CornerRadiiPayload effectiveCornerRadii;
 
   IosWindowControlLayoutData toLayoutData() => IosWindowControlLayoutData(

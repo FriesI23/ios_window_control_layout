@@ -11,23 +11,23 @@ void main() {
 
     expect(data, isA<IosWindowControlLayoutData>());
     _expectConfiguredState(data);
-    expect(data.baseMargins.start.isFinite, isTrue);
-    expect(data.baseMargins.end.isFinite, isTrue);
-    expect(data.horizontalAvoidance.start.isFinite, isTrue);
-    expect(data.horizontalAvoidance.end.isFinite, isTrue);
-    expect(data.baseSafeArea.start.isFinite, isTrue);
-    expect(data.baseSafeArea.end.isFinite, isTrue);
-    expect(data.horizontalSafeAreaAvoidance.start.isFinite, isTrue);
+    expect(data.baseMargins.left.isFinite, isTrue);
+    expect(data.baseMargins.right.isFinite, isTrue);
+    expect(data.horizontalAvoidance.left.isFinite, isTrue);
+    expect(data.horizontalAvoidance.right.isFinite, isTrue);
+    expect(data.baseSafeArea.left.isFinite, isTrue);
+    expect(data.baseSafeArea.right.isFinite, isTrue);
+    expect(data.horizontalSafeAreaAvoidance.left.isFinite, isTrue);
     expect(data.verticalSafeAreaAvoidance.bottom.isFinite, isTrue);
     expect(data.effectiveCornerRadii.bottomLeft.x.isFinite, isTrue);
 
     if (!data.isAvailable) {
-      expect(data.baseMargins, EdgeInsetsDirectional.zero);
-      expect(data.horizontalMargins, EdgeInsetsDirectional.zero);
-      expect(data.verticalMargins, EdgeInsetsDirectional.zero);
-      expect(data.baseSafeArea, EdgeInsetsDirectional.zero);
-      expect(data.horizontalSafeArea, EdgeInsetsDirectional.zero);
-      expect(data.verticalSafeArea, EdgeInsetsDirectional.zero);
+      expect(data.baseMargins, EdgeInsets.zero);
+      expect(data.horizontalMargins, EdgeInsets.zero);
+      expect(data.verticalMargins, EdgeInsets.zero);
+      expect(data.baseSafeArea, EdgeInsets.zero);
+      expect(data.horizontalSafeArea, EdgeInsets.zero);
+      expect(data.verticalSafeArea, EdgeInsets.zero);
       expect(data.effectiveCornerRadii, BorderRadius.zero);
     }
   });

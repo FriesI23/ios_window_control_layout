@@ -18,9 +18,9 @@ final class IosWindowControlLayoutData {
     required this.baseMargins,
     required this.horizontalMargins,
     required this.verticalMargins,
-    this.baseSafeArea = EdgeInsetsDirectional.zero,
-    this.horizontalSafeArea = EdgeInsetsDirectional.zero,
-    this.verticalSafeArea = EdgeInsetsDirectional.zero,
+    this.baseSafeArea = EdgeInsets.zero,
+    this.horizontalSafeArea = EdgeInsets.zero,
+    this.verticalSafeArea = EdgeInsets.zero,
     this.effectiveCornerRadii = BorderRadius.zero,
   });
 
@@ -29,12 +29,12 @@ final class IosWindowControlLayoutData {
     isAvailable: false,
     isPad: false,
     isFullScreen: true,
-    baseMargins: EdgeInsetsDirectional.zero,
-    horizontalMargins: EdgeInsetsDirectional.zero,
-    verticalMargins: EdgeInsetsDirectional.zero,
-    baseSafeArea: EdgeInsetsDirectional.zero,
-    horizontalSafeArea: EdgeInsetsDirectional.zero,
-    verticalSafeArea: EdgeInsetsDirectional.zero,
+    baseMargins: EdgeInsets.zero,
+    horizontalMargins: EdgeInsets.zero,
+    verticalMargins: EdgeInsets.zero,
+    baseSafeArea: EdgeInsets.zero,
+    horizontalSafeArea: EdgeInsets.zero,
+    verticalSafeArea: EdgeInsets.zero,
     effectiveCornerRadii: BorderRadius.zero,
   );
 
@@ -58,68 +58,67 @@ final class IosWindowControlLayoutData {
   /// conservatively report `true`.
   final bool isFullScreen;
 
-  /// The view's ordinary directional layout margins.
-  final EdgeInsetsDirectional baseMargins;
+  /// The view's ordinary physical layout margins.
+  final EdgeInsets baseMargins;
 
   /// Margins adapted along the horizontal axis.
-  final EdgeInsetsDirectional horizontalMargins;
+  final EdgeInsets horizontalMargins;
 
   /// Margins adapted along the vertical axis.
-  final EdgeInsetsDirectional verticalMargins;
+  final EdgeInsets verticalMargins;
 
-  /// The view's ordinary directional safe-area insets.
+  /// The view's ordinary physical safe-area insets.
   ///
   /// Use this raw UIKit value directly when a control should remain inside the
   /// standard safe area near a device or window corner.
-  final EdgeInsetsDirectional baseSafeArea;
+  final EdgeInsets baseSafeArea;
 
   /// Safe-area insets adapted along the horizontal axis.
   ///
   /// This is the raw UIKit layout region and can be used directly as layout
   /// padding for floating controls near horizontally curved corners.
-  final EdgeInsetsDirectional horizontalSafeArea;
+  final EdgeInsets horizontalSafeArea;
 
   /// Safe-area insets adapted along the vertical axis.
   ///
   /// This is the raw UIKit layout region and can be used directly as layout
   /// padding for floating controls near vertically curved corners.
-  final EdgeInsetsDirectional verticalSafeArea;
+  final EdgeInsets verticalSafeArea;
 
   /// Effective physical corner radii of the current UIKit view.
   ///
   /// The values follow the current device, orientation, and window geometry.
-  /// They are zero when unavailable. Unlike directional insets, physical
+  /// They are zero when unavailable. Like the inset values above, physical
   /// corner radii do not flip in right-to-left layouts.
   final BorderRadius effectiveCornerRadii;
 
-  /// Extra directional insets needed for horizontal corner adaptation.
-  EdgeInsetsDirectional get horizontalAvoidance =>
+  /// Extra physical insets needed for horizontal corner adaptation.
+  EdgeInsets get horizontalAvoidance =>
       _difference(horizontalMargins, baseMargins);
 
-  /// Extra directional insets needed for vertical corner adaptation.
-  EdgeInsetsDirectional get verticalAvoidance =>
-      _difference(verticalMargins, baseMargins);
+  /// Extra physical insets needed for vertical corner adaptation.
+  EdgeInsets get verticalAvoidance => _difference(verticalMargins, baseMargins);
 
-  /// Extra directional insets added by horizontal safe-area adaptation.
+  /// Extra physical insets added by horizontal safe-area adaptation.
   ///
   /// Each edge is `horizontalSafeArea - baseSafeArea`, clamped to zero. This
   /// is an addition to an existing ordinary safe area, not a replacement for
   /// the raw adapted safe-area value.
-  EdgeInsetsDirectional get horizontalSafeAreaAvoidance =>
+  EdgeInsets get horizontalSafeAreaAvoidance =>
       _difference(horizontalSafeArea, baseSafeArea);
 
-  /// Extra directional insets added by vertical safe-area adaptation.
+  /// Extra physical insets added by vertical safe-area adaptation.
   ///
   /// Each edge is `verticalSafeArea - baseSafeArea`, clamped to zero. This is
   /// an addition to an existing ordinary safe area, not a replacement for the
   /// raw adapted safe-area value.
-  EdgeInsetsDirectional get verticalSafeAreaAvoidance =>
+  EdgeInsets get verticalSafeAreaAvoidance =>
       _difference(verticalSafeArea, baseSafeArea);
 
   /// Whether either adaptation axis adds any extra margin.
   bool get hasAvoidance =>
-      horizontalAvoidance != EdgeInsetsDirectional.zero ||
-      verticalAvoidance != EdgeInsetsDirectional.zero;
+      horizontalAvoidance != EdgeInsets.zero ||
+      verticalAvoidance != EdgeInsets.zero;
 
   /// Whether horizontal avoidance belongs to an iPad windowed scene.
   ///
@@ -129,17 +128,15 @@ final class IosWindowControlLayoutData {
       isAvailable &&
       isPad &&
       !isFullScreen &&
-      horizontalAvoidance != EdgeInsetsDirectional.zero;
+      horizontalAvoidance != EdgeInsets.zero;
 
-  static EdgeInsetsDirectional _difference(
-    EdgeInsetsDirectional adapted,
-    EdgeInsetsDirectional base,
-  ) => EdgeInsetsDirectional.fromSTEB(
-    math.max(0, adapted.start - base.start),
-    math.max(0, adapted.top - base.top),
-    math.max(0, adapted.end - base.end),
-    math.max(0, adapted.bottom - base.bottom),
-  );
+  static EdgeInsets _difference(EdgeInsets adapted, EdgeInsets base) =>
+      EdgeInsets.fromLTRB(
+        math.max(0, adapted.left - base.left),
+        math.max(0, adapted.top - base.top),
+        math.max(0, adapted.right - base.right),
+        math.max(0, adapted.bottom - base.bottom),
+      );
 
   @override
   bool operator ==(Object other) =>

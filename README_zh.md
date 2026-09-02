@@ -60,6 +60,10 @@ final floatingControlInsets = layout.horizontalSafeArea;
 final windowCorners = layout.effectiveCornerRadii;
 ```
 
+所有 inset 属性都是物理 `EdgeInsets`。其中 `left` 和 `right` 描述 UIKit
+窗口的实际几何位置，不会在 Flutter `Directionality` 改变时翻转。将其分配给
+逻辑 leading 或 trailing 控件时，需要显式选择对应的物理侧。
+
 `of` 和 `maybeOf` 会建立 inherited dependency；`read` 和 `maybeRead`
 只读取当前值。首次 frame 完成后、窗口尺寸变化以及应用恢复时，布局会自动刷新。
 也可以主动请求刷新：
@@ -105,6 +109,24 @@ Margin 类数值更适合普通内容，safe-area 类数值更适合靠近设备
 返回当前 view 的 `isPad` 与 scene 的 `isFullScreen`，不可用的布局区域和
 圆角数值为零；其他平台返回完整的零值快照。
 
+### 从 0.4.x 迁移
+
+0.5.0 将所有公开的 `EdgeInsetsDirectional` 布局值替换为物理
+`EdgeInsets`。直接用作物理 padding 时，将 `.start`/`.end` 改成
+`.left`/`.right`。用于 AppBar 的逻辑槽位时，根据 Flutter 当前文字方向映射
+物理两侧：
+
+```dart
+final avoidance = layout.horizontalAvoidance;
+final direction = Directionality.of(context);
+final leadingAvoidance = direction == TextDirection.ltr
+    ? avoidance.left
+    : avoidance.right;
+final trailingAvoidance = direction == TextDirection.ltr
+    ? avoidance.right
+    : avoidance.left;
+```
+
 <details>
 <summary>完整示例</summary>
 
@@ -146,6 +168,13 @@ class ExamplePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final layout = IosWindowControlLayout.of(context);
     final avoidance = layout.horizontalAvoidance;
+    final direction = Directionality.of(context);
+    final leadingAvoidance = direction == TextDirection.ltr
+        ? avoidance.left
+        : avoidance.right;
+    final trailingAvoidance = direction == TextDirection.ltr
+        ? avoidance.right
+        : avoidance.left;
     final flutterSafeArea = MediaQuery.viewPaddingOf(context);
     final adaptedBottom = math.max(
       flutterSafeArea.bottom,
@@ -169,10 +198,10 @@ class ExamplePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        leadingWidth: kToolbarHeight + _edgePadding + avoidance.start,
+        leadingWidth: kToolbarHeight + _edgePadding + leadingAvoidance,
         leading: Padding(
           padding: EdgeInsetsDirectional.only(
-            start: _edgePadding + avoidance.start,
+            start: _edgePadding + leadingAvoidance,
           ),
           child: IconButton(
             onPressed: () {},
@@ -183,7 +212,7 @@ class ExamplePage extends StatelessWidget {
         actions: [
           Padding(
             padding: EdgeInsetsDirectional.only(
-              end: _edgePadding + avoidance.end,
+              end: _edgePadding + trailingAvoidance,
             ),
             child: IconButton(
               onPressed: () => IosWindowControlLayout.refresh(context),
@@ -193,9 +222,9 @@ class ExamplePage extends StatelessWidget {
         ],
       ),
       body: Padding(
-        padding: EdgeInsetsDirectional.only(
-          start: _edgePadding + avoidance.start,
-          end: _edgePadding + avoidance.end,
+        padding: EdgeInsets.only(
+          left: _edgePadding + avoidance.left,
+          right: _edgePadding + avoidance.right,
         ),
         child: Center(
           child: Text('Available: ${layout.isAvailable}'),

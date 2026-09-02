@@ -32,36 +32,65 @@ void main() {
   test('avoidance is the non-negative adapted margin difference', () {
     const data = IosWindowControlLayoutData(
       isAvailable: true,
-      baseMargins: EdgeInsetsDirectional.fromSTEB(16, 12, 20, 8),
-      horizontalMargins: EdgeInsetsDirectional.fromSTEB(72, 10, 18, 8),
-      verticalMargins: EdgeInsetsDirectional.fromSTEB(16, 52, 20, 6),
-      baseSafeArea: EdgeInsetsDirectional.fromSTEB(4, 6, 8, 10),
-      horizontalSafeArea: EdgeInsetsDirectional.fromSTEB(34, 4, 6, 10),
-      verticalSafeArea: EdgeInsetsDirectional.fromSTEB(2, 46, 8, 8),
+      baseMargins: EdgeInsets.fromLTRB(16, 12, 20, 8),
+      horizontalMargins: EdgeInsets.fromLTRB(72, 10, 18, 8),
+      verticalMargins: EdgeInsets.fromLTRB(16, 52, 20, 6),
+      baseSafeArea: EdgeInsets.fromLTRB(4, 6, 8, 10),
+      horizontalSafeArea: EdgeInsets.fromLTRB(34, 4, 6, 10),
+      verticalSafeArea: EdgeInsets.fromLTRB(2, 46, 8, 8),
       effectiveCornerRadii: BorderRadius.all(Radius.circular(62)),
     );
 
-    expect(
-      data.horizontalAvoidance,
-      const EdgeInsetsDirectional.fromSTEB(56, 0, 0, 0),
-    );
-    expect(
-      data.verticalAvoidance,
-      const EdgeInsetsDirectional.fromSTEB(0, 40, 0, 0),
-    );
+    expect(data.horizontalAvoidance, const EdgeInsets.fromLTRB(56, 0, 0, 0));
+    expect(data.verticalAvoidance, const EdgeInsets.fromLTRB(0, 40, 0, 0));
     expect(data.hasAvoidance, isTrue);
-    expect(
-      data.horizontalAvoidance.resolve(TextDirection.rtl),
-      const EdgeInsets.only(right: 56),
-    );
+    expect(data.horizontalAvoidance, const EdgeInsets.only(left: 56));
     expect(
       data.horizontalSafeAreaAvoidance,
-      const EdgeInsetsDirectional.fromSTEB(30, 0, 0, 0),
+      const EdgeInsets.fromLTRB(30, 0, 0, 0),
     );
     expect(
       data.verticalSafeAreaAvoidance,
-      const EdgeInsetsDirectional.fromSTEB(0, 40, 0, 0),
+      const EdgeInsets.fromLTRB(0, 40, 0, 0),
     );
+  });
+
+  testWidgets('physical avoidance does not flip with Flutter directionality', (
+    tester,
+  ) async {
+    const data = IosWindowControlLayoutData(
+      isAvailable: true,
+      baseMargins: EdgeInsets.zero,
+      horizontalMargins: EdgeInsets.only(left: 40, right: 12),
+      verticalMargins: EdgeInsets.zero,
+    );
+    const contentKey = ValueKey('physical-content');
+
+    Future<Rect> layout(TextDirection direction) async {
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: direction,
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 200,
+              child: Padding(
+                padding: data.horizontalAvoidance,
+                child: const SizedBox(key: contentKey, height: 20),
+              ),
+            ),
+          ),
+        ),
+      );
+      return tester.getRect(find.byKey(contentKey));
+    }
+
+    final ltrRect = await layout(TextDirection.ltr);
+    final rtlRect = await layout(TextDirection.rtl);
+
+    expect(rtlRect, ltrRect);
+    expect(ltrRect.left, 40);
+    expect(ltrRect.width, 148);
   });
 
   test('zero data is unavailable and has no avoidance', () {
@@ -70,17 +99,14 @@ void main() {
     expect(IosWindowControlLayoutData.zero.isFullScreen, isTrue);
     expect(IosWindowControlLayoutData.zero.hasAvoidance, isFalse);
     expect(IosWindowControlLayoutData.zero.hasWindowControlAvoidance, isFalse);
-    expect(
-      IosWindowControlLayoutData.zero.baseSafeArea,
-      EdgeInsetsDirectional.zero,
-    );
+    expect(IosWindowControlLayoutData.zero.baseSafeArea, EdgeInsets.zero);
     expect(
       IosWindowControlLayoutData.zero.horizontalSafeAreaAvoidance,
-      EdgeInsetsDirectional.zero,
+      EdgeInsets.zero,
     );
     expect(
       IosWindowControlLayoutData.zero.verticalSafeAreaAvoidance,
-      EdgeInsetsDirectional.zero,
+      EdgeInsets.zero,
     );
     expect(
       IosWindowControlLayoutData.zero.effectiveCornerRadii,
@@ -97,9 +123,9 @@ void main() {
       isAvailable: isAvailable,
       isPad: isPad,
       isFullScreen: isFullScreen,
-      baseMargins: EdgeInsetsDirectional.zero,
-      horizontalMargins: const EdgeInsetsDirectional.only(start: 40),
-      verticalMargins: EdgeInsetsDirectional.zero,
+      baseMargins: EdgeInsets.zero,
+      horizontalMargins: const EdgeInsets.only(left: 40),
+      verticalMargins: EdgeInsets.zero,
     );
 
     expect(
@@ -141,22 +167,22 @@ void main() {
   test('data has value equality', () {
     const first = IosWindowControlLayoutData(
       isAvailable: true,
-      baseMargins: EdgeInsetsDirectional.all(8),
-      horizontalMargins: EdgeInsetsDirectional.all(16),
-      verticalMargins: EdgeInsetsDirectional.all(24),
-      baseSafeArea: EdgeInsetsDirectional.all(4),
-      horizontalSafeArea: EdgeInsetsDirectional.all(12),
-      verticalSafeArea: EdgeInsetsDirectional.all(20),
+      baseMargins: EdgeInsets.all(8),
+      horizontalMargins: EdgeInsets.all(16),
+      verticalMargins: EdgeInsets.all(24),
+      baseSafeArea: EdgeInsets.all(4),
+      horizontalSafeArea: EdgeInsets.all(12),
+      verticalSafeArea: EdgeInsets.all(20),
       effectiveCornerRadii: BorderRadius.all(Radius.circular(62)),
     );
     const second = IosWindowControlLayoutData(
       isAvailable: true,
-      baseMargins: EdgeInsetsDirectional.all(8),
-      horizontalMargins: EdgeInsetsDirectional.all(16),
-      verticalMargins: EdgeInsetsDirectional.all(24),
-      baseSafeArea: EdgeInsetsDirectional.all(4),
-      horizontalSafeArea: EdgeInsetsDirectional.all(12),
-      verticalSafeArea: EdgeInsetsDirectional.all(20),
+      baseMargins: EdgeInsets.all(8),
+      horizontalMargins: EdgeInsets.all(16),
+      verticalMargins: EdgeInsets.all(24),
+      baseSafeArea: EdgeInsets.all(4),
+      horizontalSafeArea: EdgeInsets.all(12),
+      verticalSafeArea: EdgeInsets.all(20),
       effectiveCornerRadii: BorderRadius.all(Radius.circular(62)),
     );
 
@@ -167,12 +193,12 @@ void main() {
       isNot(
         const IosWindowControlLayoutData(
           isAvailable: true,
-          baseMargins: EdgeInsetsDirectional.all(8),
-          horizontalMargins: EdgeInsetsDirectional.all(16),
-          verticalMargins: EdgeInsetsDirectional.all(24),
-          baseSafeArea: EdgeInsetsDirectional.all(5),
-          horizontalSafeArea: EdgeInsetsDirectional.all(12),
-          verticalSafeArea: EdgeInsetsDirectional.all(20),
+          baseMargins: EdgeInsets.all(8),
+          horizontalMargins: EdgeInsets.all(16),
+          verticalMargins: EdgeInsets.all(24),
+          baseSafeArea: EdgeInsets.all(5),
+          horizontalSafeArea: EdgeInsets.all(12),
+          verticalSafeArea: EdgeInsets.all(20),
           effectiveCornerRadii: BorderRadius.all(Radius.circular(61)),
         ),
       ),
@@ -199,12 +225,12 @@ void main() {
   ) async {
     const updated = IosWindowControlLayoutData(
       isAvailable: true,
-      baseMargins: EdgeInsetsDirectional.all(8),
-      horizontalMargins: EdgeInsetsDirectional.fromSTEB(40, 8, 8, 8),
-      verticalMargins: EdgeInsetsDirectional.fromSTEB(8, 40, 8, 8),
-      baseSafeArea: EdgeInsetsDirectional.all(4),
-      horizontalSafeArea: EdgeInsetsDirectional.fromSTEB(24, 4, 4, 4),
-      verticalSafeArea: EdgeInsetsDirectional.all(4),
+      baseMargins: EdgeInsets.all(8),
+      horizontalMargins: EdgeInsets.fromLTRB(40, 8, 8, 8),
+      verticalMargins: EdgeInsets.fromLTRB(8, 40, 8, 8),
+      baseSafeArea: EdgeInsets.all(4),
+      horizontalSafeArea: EdgeInsets.fromLTRB(24, 4, 4, 4),
+      verticalSafeArea: EdgeInsets.all(4),
     );
     var queryCount = 0;
     IosWindowControlLayoutPlatform.instance = _FakePlatform(() async {
@@ -286,9 +312,9 @@ void main() {
         isAvailable: true,
         isPad: true,
         isFullScreen: isFullScreen,
-        baseMargins: EdgeInsetsDirectional.zero,
-        horizontalMargins: const EdgeInsetsDirectional.only(start: 40),
-        verticalMargins: EdgeInsetsDirectional.zero,
+        baseMargins: EdgeInsets.zero,
+        horizontalMargins: const EdgeInsets.only(left: 40),
+        verticalMargins: EdgeInsets.zero,
       ),
     );
 
@@ -326,7 +352,7 @@ void main() {
             builder: (context) {
               layoutContext = context;
               final data = IosWindowControlLayout.of(context);
-              return Text('${data.baseMargins.start}');
+              return Text('${data.baseMargins.left}');
             },
           ),
         ),
@@ -339,9 +365,9 @@ void main() {
     second.complete(
       const IosWindowControlLayoutData(
         isAvailable: true,
-        baseMargins: EdgeInsetsDirectional.all(20),
-        horizontalMargins: EdgeInsetsDirectional.all(20),
-        verticalMargins: EdgeInsetsDirectional.all(20),
+        baseMargins: EdgeInsets.all(20),
+        horizontalMargins: EdgeInsets.all(20),
+        verticalMargins: EdgeInsets.all(20),
       ),
     );
     await refresh;
@@ -349,9 +375,9 @@ void main() {
     first.complete(
       const IosWindowControlLayoutData(
         isAvailable: true,
-        baseMargins: EdgeInsetsDirectional.all(10),
-        horizontalMargins: EdgeInsetsDirectional.all(10),
-        verticalMargins: EdgeInsetsDirectional.all(10),
+        baseMargins: EdgeInsets.all(10),
+        horizontalMargins: EdgeInsets.all(10),
+        verticalMargins: EdgeInsets.all(10),
       ),
     );
     await tester.pump();
@@ -403,9 +429,9 @@ void main() {
 
     current = const IosWindowControlLayoutData(
       isAvailable: true,
-      baseMargins: EdgeInsetsDirectional.all(8),
-      horizontalMargins: EdgeInsetsDirectional.all(8),
-      verticalMargins: EdgeInsetsDirectional.all(8),
+      baseMargins: EdgeInsets.all(8),
+      horizontalMargins: EdgeInsets.all(8),
+      verticalMargins: EdgeInsets.all(8),
     );
     await IosWindowControlLayout.refresh(layoutContext);
     await tester.pump();
@@ -419,9 +445,9 @@ void main() {
   ) async {
     const valid = IosWindowControlLayoutData(
       isAvailable: true,
-      baseMargins: EdgeInsetsDirectional.all(12),
-      horizontalMargins: EdgeInsetsDirectional.all(12),
-      verticalMargins: EdgeInsetsDirectional.all(12),
+      baseMargins: EdgeInsets.all(12),
+      horizontalMargins: EdgeInsets.all(12),
+      verticalMargins: EdgeInsets.all(12),
     );
     var shouldFail = false;
     IosWindowControlLayoutPlatform.instance = _FakePlatform(() async {
@@ -437,7 +463,7 @@ void main() {
             builder: (context) {
               layoutContext = context;
               final data = IosWindowControlLayout.of(context);
-              return Text('${data.baseMargins.start}');
+              return Text('${data.baseMargins.left}');
             },
           ),
         ),
@@ -468,8 +494,8 @@ class _LayoutValue extends StatelessWidget {
     final data = IosWindowControlLayout.of(context);
     return Text(
       '${data.isAvailable}:${data.isPad}:${data.isFullScreen}:'
-      '${data.horizontalAvoidance.start}:'
-      '${data.horizontalSafeAreaAvoidance.start}',
+      '${data.horizontalAvoidance.left}:'
+      '${data.horizontalSafeAreaAvoidance.left}',
     );
   }
 }

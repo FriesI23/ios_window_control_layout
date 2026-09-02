@@ -55,6 +55,7 @@ extension IosWindowControlLayoutPlugin {
         let payload = Self.queryLayout(
             isPad: isPad,
             isFullScreen: isFullScreen,
+            layoutDirection: view.effectiveUserInterfaceLayoutDirection,
             baseMargins: view.directionalEdgeInsets(for: .margins()),
             horizontalMargins: view.directionalEdgeInsets(
                 for: .margins(cornerAdaptation: .horizontal)
@@ -93,6 +94,7 @@ extension IosWindowControlLayoutPlugin {
     static func queryLayout(
         isPad: Bool,
         isFullScreen: Bool,
+        layoutDirection: UIUserInterfaceLayoutDirection,
         baseMargins: NSDirectionalEdgeInsets,
         horizontalMargins: NSDirectionalEdgeInsets,
         verticalMargins: NSDirectionalEdgeInsets,
@@ -105,12 +107,30 @@ extension IosWindowControlLayoutPlugin {
             isAvailable: true,
             isPad: isPad,
             isFullScreen: isFullScreen,
-            baseMargins: DirectionalInsetsPayload(baseMargins),
-            horizontalMargins: DirectionalInsetsPayload(horizontalMargins),
-            verticalMargins: DirectionalInsetsPayload(verticalMargins),
-            baseSafeArea: DirectionalInsetsPayload(baseSafeArea),
-            horizontalSafeArea: DirectionalInsetsPayload(horizontalSafeArea),
-            verticalSafeArea: DirectionalInsetsPayload(verticalSafeArea),
+            baseMargins: PhysicalInsetsPayload(
+                baseMargins,
+                layoutDirection: layoutDirection
+            ),
+            horizontalMargins: PhysicalInsetsPayload(
+                horizontalMargins,
+                layoutDirection: layoutDirection
+            ),
+            verticalMargins: PhysicalInsetsPayload(
+                verticalMargins,
+                layoutDirection: layoutDirection
+            ),
+            baseSafeArea: PhysicalInsetsPayload(
+                baseSafeArea,
+                layoutDirection: layoutDirection
+            ),
+            horizontalSafeArea: PhysicalInsetsPayload(
+                horizontalSafeArea,
+                layoutDirection: layoutDirection
+            ),
+            verticalSafeArea: PhysicalInsetsPayload(
+                verticalSafeArea,
+                layoutDirection: layoutDirection
+            ),
             effectiveCornerRadii: effectiveCornerRadii
         )
     }

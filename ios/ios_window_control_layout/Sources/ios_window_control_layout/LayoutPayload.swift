@@ -1,38 +1,64 @@
 import UIKit
 
-/// Directional insets mirrored by Dart's `DirectionalInsetsPayload`.
-struct DirectionalInsetsPayload {
-    let start: Double
+/// Physical insets mirrored by Dart's `PhysicalInsetsPayload`.
+struct PhysicalInsetsPayload {
+    let left: Double
     let top: Double
-    let end: Double
+    let right: Double
     let bottom: Double
 
+    static let zero = PhysicalInsetsPayload(
+        left: 0,
+        top: 0,
+        right: 0,
+        bottom: 0
+    )
+
     init(
-        start: Double,
+        left: Double,
         top: Double,
-        end: Double,
+        right: Double,
         bottom: Double
     ) {
-        self.start = start
+        self.left = left
         self.top = top
-        self.end = end
+        self.right = right
         self.bottom = bottom
     }
 
-    init(_ insets: NSDirectionalEdgeInsets) {
+    init(
+        _ insets: NSDirectionalEdgeInsets,
+        layoutDirection: UIUserInterfaceLayoutDirection
+    ) {
+        let left = switch layoutDirection {
+        case .leftToRight:
+            insets.leading
+        case .rightToLeft:
+            insets.trailing
+        @unknown default:
+            insets.leading
+        }
+        let right = switch layoutDirection {
+        case .leftToRight:
+            insets.trailing
+        case .rightToLeft:
+            insets.leading
+        @unknown default:
+            insets.trailing
+        }
         self.init(
-            start: Double(insets.leading),
+            left: Double(left),
             top: Double(insets.top),
-            end: Double(insets.trailing),
+            right: Double(right),
             bottom: Double(insets.bottom)
         )
     }
 
     func encode() -> [String: Double] {
         [
-            "start": start,
+            "left": left,
             "top": top,
-            "end": end,
+            "right": right,
             "bottom": bottom,
         ]
     }
@@ -65,7 +91,7 @@ struct CornerRadiiPayload {
 /// Versioned payload containing only StandardMessageCodec-compatible values.
 /// Keep this structure synchronized with Dart's `LayoutPayload`.
 struct LayoutPayload {
-    static let schemaVersion = 4
+    static let schemaVersion = 5
 
     static func layoutRegionsUnavailable(
         isPad: Bool,
@@ -75,12 +101,12 @@ struct LayoutPayload {
             isAvailable: false,
             isPad: isPad,
             isFullScreen: isFullScreen,
-            baseMargins: DirectionalInsetsPayload(.zero),
-            horizontalMargins: DirectionalInsetsPayload(.zero),
-            verticalMargins: DirectionalInsetsPayload(.zero),
-            baseSafeArea: DirectionalInsetsPayload(.zero),
-            horizontalSafeArea: DirectionalInsetsPayload(.zero),
-            verticalSafeArea: DirectionalInsetsPayload(.zero),
+            baseMargins: .zero,
+            horizontalMargins: .zero,
+            verticalMargins: .zero,
+            baseSafeArea: .zero,
+            horizontalSafeArea: .zero,
+            verticalSafeArea: .zero,
             effectiveCornerRadii: .zero
         )
     }
@@ -88,12 +114,12 @@ struct LayoutPayload {
     let isAvailable: Bool
     let isPad: Bool
     let isFullScreen: Bool
-    let baseMargins: DirectionalInsetsPayload
-    let horizontalMargins: DirectionalInsetsPayload
-    let verticalMargins: DirectionalInsetsPayload
-    let baseSafeArea: DirectionalInsetsPayload
-    let horizontalSafeArea: DirectionalInsetsPayload
-    let verticalSafeArea: DirectionalInsetsPayload
+    let baseMargins: PhysicalInsetsPayload
+    let horizontalMargins: PhysicalInsetsPayload
+    let verticalMargins: PhysicalInsetsPayload
+    let baseSafeArea: PhysicalInsetsPayload
+    let horizontalSafeArea: PhysicalInsetsPayload
+    let verticalSafeArea: PhysicalInsetsPayload
     let effectiveCornerRadii: CornerRadiiPayload
 
     func encode() -> [String: Any] {
