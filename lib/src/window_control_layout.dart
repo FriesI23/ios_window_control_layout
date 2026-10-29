@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:ui' show DisplayFeature, FlutterView;
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/widgets.dart';
 
 import 'layout_data.dart';
@@ -8,7 +10,8 @@ import 'platform.dart';
 /// Provides UIKit's corner-adapted margins and safe areas to descendants.
 ///
 /// The layout refreshes after its first frame, when Flutter reports new window
-/// metrics, and when the application resumes. Call [refresh] when an
+/// metrics, when the application resumes, and when native system occlusions
+/// change. Place one owner above the application navigators. Call [refresh] when an
 /// application-specific event can change the native window chrome without a
 /// corresponding Flutter metrics update.
 class IosWindowControlLayout extends StatefulWidget {
@@ -74,32 +77,78 @@ class _IosWindowControlLayoutState extends State<IosWindowControlLayout>
     with WidgetsBindingObserver {
   IosWindowControlLayoutData _data = IosWindowControlLayoutData.zero;
   Future<void>? _scheduledRefresh;
+  StreamSubscription<void>? _occlusionSubscription;
   int _latestRequestId = 0;
+  _OcclusionViewGeometry? _viewGeometry;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _occlusionSubscription = IosWindowControlLayoutPlatform
+        .instance
+        .occlusionChanges
+        .listen(
+          (_) {
+            _invalidateOcclusion();
+            unawaited(_scheduleRefresh());
+          },
+          onError: (Object error, StackTrace stackTrace) {
+            if (!mounted) return;
+            _invalidateOcclusion();
+            _reportError(
+              error,
+              stackTrace,
+              'while observing system occlusions',
+            );
+          },
+        );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_scheduleRefresh());
     });
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final previous = _viewGeometry;
+    final view = View.of(context);
+    if (previous != null && identical(previous.view, view)) return;
+    _viewGeometry = _OcclusionViewGeometry.fromView(view);
+    if (previous != null) {
+      _invalidateOcclusion();
+      unawaited(_scheduleRefresh());
+    }
+  }
+
+  @override
   void dispose() {
     _latestRequestId++;
     WidgetsBinding.instance.removeObserver(this);
+    unawaited(_occlusionSubscription?.cancel());
     super.dispose();
   }
 
   @override
   void didChangeMetrics() {
+    final previous = _viewGeometry;
+    final current = previous == null
+        ? null
+        : _OcclusionViewGeometry.fromView(previous.view);
+    if (current == null || current != previous) {
+      _viewGeometry = current;
+      _invalidateOcclusion();
+    }
+    // Refresh every notification, but discard valid geometry only when its
+    // coordinate or protection inputs change. Presentation preferences and
+    // derived viewport insets do not change the root-view coordinate space.
     unawaited(_scheduleRefresh());
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      _invalidateOcclusion();
       unawaited(_scheduleRefresh());
     }
   }
@@ -107,7 +156,7 @@ class _IosWindowControlLayoutState extends State<IosWindowControlLayout>
   Future<void> _scheduleRefresh() =>
       _scheduledRefresh ??= Future<void>.microtask(() async {
         _scheduledRefresh = null;
-        await _refresh();
+        if (mounted) await _refresh();
       });
 
   Future<void> _refresh() async {
@@ -120,17 +169,36 @@ class _IosWindowControlLayoutState extends State<IosWindowControlLayout>
       setState(() => _data = data);
     } catch (error, stackTrace) {
       if (!mounted || requestId != _latestRequestId) return;
-      FlutterError.reportError(
-        FlutterErrorDetails(
-          exception: error,
-          stack: stackTrace,
-          library: 'ios_window_control_layout',
-          context: ErrorDescription(
-            'while refreshing the iOS window-control layout',
-          ),
-        ),
+      _clearOcclusion();
+      _reportError(
+        error,
+        stackTrace,
+        'while refreshing the iOS window-control layout',
       );
     }
+  }
+
+  void _invalidateOcclusion() {
+    if (!mounted) return;
+    // Even an empty snapshot can have a pre-invalidation query in flight.
+    _latestRequestId++;
+    _clearOcclusion();
+  }
+
+  void _clearOcclusion() {
+    if (_data.occlusionGeometry == null) return;
+    setState(() => _data = _data.withoutOcclusionGeometry());
+  }
+
+  void _reportError(Object error, StackTrace stackTrace, String context) {
+    FlutterError.reportError(
+      FlutterErrorDetails(
+        exception: error,
+        stack: stackTrace,
+        library: 'ios_window_control_layout',
+        context: ErrorDescription(context),
+      ),
+    );
   }
 
   @override
@@ -138,6 +206,97 @@ class _IosWindowControlLayoutState extends State<IosWindowControlLayout>
     data: _data,
     refresh: _scheduleRefresh,
     child: widget.child,
+  );
+}
+
+// Only inputs that establish the coordinate space or its protection belong
+// here. Native region changes have their own invalidation channel. In particular,
+// MediaQuery presentation preferences and temporary viewInsets are not geometry.
+class _OcclusionViewGeometry {
+  _OcclusionViewGeometry._({
+    required this.view,
+    required this.size,
+    required this.devicePixelRatio,
+    required this.viewPadding,
+    required this.independentPadding,
+    required this.systemGestureInsets,
+    required List<DisplayFeature> displayFeatures,
+  }) : displayFeatures = List<DisplayFeature>.unmodifiable(displayFeatures);
+
+  factory _OcclusionViewGeometry.fromView(FlutterView view) {
+    final metrics = MediaQueryData.fromView(view);
+    return _OcclusionViewGeometry._(
+      view: view,
+      size: metrics.size,
+      devicePixelRatio: metrics.devicePixelRatio,
+      viewPadding: metrics.viewPadding,
+      independentPadding: EdgeInsets.fromLTRB(
+        _paddingResidual(
+          metrics.padding.left,
+          metrics.viewPadding.left,
+          metrics.viewInsets.left,
+        ),
+        _paddingResidual(
+          metrics.padding.top,
+          metrics.viewPadding.top,
+          metrics.viewInsets.top,
+        ),
+        _paddingResidual(
+          metrics.padding.right,
+          metrics.viewPadding.right,
+          metrics.viewInsets.right,
+        ),
+        _paddingResidual(
+          metrics.padding.bottom,
+          metrics.viewPadding.bottom,
+          metrics.viewInsets.bottom,
+        ),
+      ),
+      systemGestureInsets: metrics.systemGestureInsets,
+      displayFeatures: metrics.displayFeatures,
+    );
+  }
+
+  final FlutterView view;
+  final Size size;
+  final double devicePixelRatio;
+  final EdgeInsets viewPadding;
+  final EdgeInsets independentPadding;
+  final EdgeInsets systemGestureInsets;
+  final List<DisplayFeature> displayFeatures;
+
+  static double _paddingResidual(
+    double padding,
+    double viewPadding,
+    double inset,
+  ) {
+    final remaining = viewPadding - inset;
+    final residual = padding - (remaining > 0 ? remaining : 0.0);
+    // Normal derived padding is not an independent protection change. Remove
+    // only arithmetic noise from conversion of physical pixels to points.
+    return residual.abs() <= 0.000001 ? 0.0 : residual;
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is _OcclusionViewGeometry &&
+      identical(other.view, view) &&
+      other.size == size &&
+      other.devicePixelRatio == devicePixelRatio &&
+      other.viewPadding == viewPadding &&
+      other.independentPadding == independentPadding &&
+      other.systemGestureInsets == systemGestureInsets &&
+      listEquals(other.displayFeatures, displayFeatures);
+
+  @override
+  int get hashCode => Object.hash(
+    identityHashCode(view),
+    size,
+    devicePixelRatio,
+    viewPadding,
+    independentPadding,
+    systemGestureInsets,
+    Object.hashAll(displayFeatures),
   );
 }
 

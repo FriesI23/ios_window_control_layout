@@ -1,17 +1,22 @@
-# ios_window_control_layout_example
+# ios_window_control_layout example
 
-Demonstrates how to use the ios_window_control_layout plugin.
+Run `flutter run` from this directory.
 
-## Getting Started
+Use the menu to switch between Material and Cupertino toolbars or enable
+**Show occlusion diagnostics**. The other switches compare window-control
+avoidance and Flutter RTL layout.
 
-This project is a starting point for a Flutter application.
+On iOS/iPadOS 27.1+, the diagnostic overlay can display:
 
-A few resources to get you started if this is your first Flutter project:
+| Color | Meaning |
+| --- | --- |
+| Cyan | Flutter view bounds |
+| Red | Active system occlusions |
+| Blue | Optional recommended vertical-bar region and its center line |
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+`Occlusion geometry unavailable` means no usable snapshot is available;
+`Active regions: 0` means no active occlusions. The overlay does not change
+content layout or Safe Area.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+See the [package README](../README.md#occlusion-geometry) for coordinate
+conventions and placement guidance.

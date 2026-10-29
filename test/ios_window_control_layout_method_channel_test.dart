@@ -10,24 +10,29 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   const channel = MethodChannel('ios_window_control_layout');
-  final platform = MethodChannelIosWindowControlLayout();
+  const eventChannel = MethodChannel(
+    'ios_window_control_layout/occlusion_changes',
+  );
+  final platform = IosWindowControlLayoutPlatform();
 
   setUp(() {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
   });
 
   tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(eventChannel, null);
     debugDefaultTargetPlatformOverride = null;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null);
   });
 
-  test('decodes schema v5 window state and physical geometry', () async {
+  test('decodes schema v6 window state and physical geometry', () async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
           expect(call.method, 'queryLayout');
           return <String, Object>{
-            'schemaVersion': 5,
+            'schemaVersion': 6,
             'isAvailable': true,
             'isPad': true,
             'isFullScreen': false,
@@ -38,6 +43,7 @@ void main() {
             'horizontalSafeArea': _insets(24, 6, 8, 10),
             'verticalSafeArea': _insets(4, 36, 8, 10),
             'effectiveCornerRadii': _radii(52, 54, 60, 62),
+            'occlusionGeometry': _occlusionPayload(),
           };
         });
 
@@ -62,9 +68,188 @@ void main() {
     );
   });
 
+  test('distinguishes unavailable and valid empty occlusions', () {
+    final payload = _validPayload();
+    expect(
+      LayoutPayload.decode(payload).toLayoutData().occlusionGeometry,
+      isNull,
+    );
+    payload['occlusionGeometry'] = _occlusionPayload(regions: []);
+    final geometry = LayoutPayload.decode(
+      payload,
+    ).toLayoutData().occlusionGeometry!;
+    expect(geometry.viewBounds, const Rect.fromLTWH(0, 0, 800, 600));
+    expect(geometry.activeOcclusionRegions, isEmpty);
+    expect(geometry.hasVerticalSystemBar, isTrue);
+  });
+
+  test('keeps physical negative and out-of-view occlusion coordinates', () {
+    final payload = _validPayload()
+      ..['occlusionGeometry'] = _occlusionPayload(
+        regions: [_rect(-10, -20, 100, 900)],
+      );
+    final geometry = LayoutPayload.decode(
+      payload,
+    ).toLayoutData().occlusionGeometry!;
+    expect(geometry.activeOcclusionRegions, [
+      const Rect.fromLTWH(-10, -20, 100, 900),
+    ]);
+    expect(
+      () => geometry.activeOcclusionRegions.clear(),
+      throwsUnsupportedError,
+    );
+  });
+
+  test('decodes optional public bar layout geometry without requiring it', () {
+    final wire = _occlusionPayload();
+    final payload = _validPayload()..['occlusionGeometry'] = wire;
+    expect(
+      LayoutPayload.decode(
+        payload,
+      ).toLayoutData().occlusionGeometry!.verticalBarLayoutFrame,
+      isNull,
+    );
+    wire['verticalBarLayoutFrame'] = _rect(730, 124, 44, 442);
+    final geometry = LayoutPayload.decode(
+      payload,
+    ).toLayoutData().occlusionGeometry!;
+    expect(
+      geometry.verticalBarLayoutFrame,
+      const Rect.fromLTWH(730, 124, 44, 442),
+    );
+    expect(geometry.activeOcclusionRegions, isNotEmpty);
+  });
+
+  test(
+    'invalid optional bar layout data does not discard valid occlusions',
+    () {
+      for (final frame in <Object?>[
+        null,
+        'invalid',
+        [],
+        _rect(0, 0, 0, 40),
+        _rect(0, 0, 40, -1),
+        _rect(double.nan, 0, 44, 40),
+        _rect(0, 0, double.infinity, 40),
+      ]) {
+        final wire = <String, Object?>{
+          ..._occlusionPayload(),
+          'verticalBarLayoutFrame': frame,
+        };
+        final geometry = LayoutPayload.decode(
+          _validPayload()..['occlusionGeometry'] = wire,
+        ).toLayoutData().occlusionGeometry!;
+        expect(geometry.verticalBarLayoutFrame, isNull);
+        expect(geometry.hasVerticalSystemBar, isTrue);
+        expect(geometry.activeOcclusionRegions, isNotEmpty);
+      }
+    },
+  );
+
+  test('schema v6 requires the nullable occlusion field', () {
+    expect(
+      () => LayoutPayload.decode(_validPayload()..remove('occlusionGeometry')),
+      _throwsInvalidData,
+    );
+  });
+
+  for (final field in [
+    'viewBounds',
+    'activeOcclusionRegions',
+    'hasVerticalSystemBar',
+  ]) {
+    test('rejects missing occlusion $field', () {
+      final geometry = _occlusionPayload()..remove(field);
+      expect(
+        () => LayoutPayload.decode(
+          _validPayload()..['occlusionGeometry'] = geometry,
+        ),
+        _throwsInvalidData,
+      );
+    });
+  }
+
+  for (final invalid in <Object>['invalid', [], true]) {
+    test('rejects malformed occlusion geometry $invalid', () {
+      expect(
+        () => LayoutPayload.decode(
+          _validPayload()..['occlusionGeometry'] = invalid,
+        ),
+        _throwsInvalidData,
+      );
+    });
+  }
+
+  for (final field in ['x', 'y', 'width', 'height']) {
+    for (final invalid in <Object>[double.nan, double.infinity, 'invalid']) {
+      test('rejects non-finite or non-numeric occlusion $field=$invalid', () {
+        final rect = <String, Object>{..._rect(0, 0, 10, 10), field: invalid};
+        final payload = _validPayload()
+          ..['occlusionGeometry'] = _occlusionPayload(regions: [rect]);
+        expect(() => LayoutPayload.decode(payload), _throwsInvalidData);
+      });
+    }
+  }
+
+  test(
+    'rejects invalid dimensions, bounds overflow, and malformed list/flag',
+    () {
+      final geometries = <Map<String, Object>>[
+        {..._occlusionPayload(), 'viewBounds': _rect(0, 0, 0, 10)},
+        {..._occlusionPayload(), 'viewBounds': _rect(0, 0, 10, -1)},
+        _occlusionPayload(regions: [_rect(0, 0, -1, 10)]),
+        _occlusionPayload(
+          regions: [_rect(double.maxFinite, 0, double.maxFinite, 10)],
+        ),
+        {..._occlusionPayload(), 'activeOcclusionRegions': 'invalid'},
+        {
+          ..._occlusionPayload(),
+          'activeOcclusionRegions': [null],
+        },
+        {..._occlusionPayload(), 'hasVerticalSystemBar': 'true'},
+      ];
+      for (final geometry in geometries) {
+        expect(
+          () => LayoutPayload.decode(
+            _validPayload()..['occlusionGeometry'] = geometry,
+          ),
+          _throwsInvalidData,
+        );
+      }
+    },
+  );
+
+  test(
+    'native event channel exposes invalidations and cancels its listener',
+    () async {
+      final calls = <String>[];
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(eventChannel, (call) async {
+        calls.add(call.method);
+        return null;
+      });
+      final eventPlatform = IosWindowControlLayoutPlatform();
+      var events = 0;
+      final subscription = eventPlatform.occlusionChanges.listen(
+        (_) => events++,
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, ['listen']);
+      await messenger.handlePlatformMessage(
+        eventChannel.name,
+        const StandardMethodCodec().encodeSuccessEnvelope(1),
+        (_) {},
+      );
+      expect(events, 1);
+      await subscription.cancel();
+      expect(calls, ['listen', 'cancel']);
+    },
+  );
+
   test('payload rejects the previous schema version', () {
     expect(
-      () => LayoutPayload.decode(<String, Object>{'schemaVersion': 4}),
+      () => LayoutPayload.decode(<String, Object>{'schemaVersion': 5}),
       throwsA(
         isA<PlatformException>().having(
           (error) => error.code,
@@ -105,7 +290,7 @@ void main() {
     'horizontalSafeArea',
     'verticalSafeArea',
   ]) {
-    test('rejects schema v5 payload missing $field', () {
+    test('rejects schema v6 payload missing $field', () {
       final payload = _validPayload()..remove(field);
       expect(() => LayoutPayload.decode(payload), _throwsInvalidData);
     });
@@ -162,8 +347,8 @@ final _throwsInvalidData = throwsA(
   ),
 );
 
-Map<String, Object> _validPayload() => <String, Object>{
-  'schemaVersion': 5,
+Map<String, Object?> _validPayload() => <String, Object?>{
+  'schemaVersion': 6,
   'isAvailable': true,
   'isPad': true,
   'isFullScreen': false,
@@ -174,6 +359,7 @@ Map<String, Object> _validPayload() => <String, Object>{
   'horizontalSafeArea': _insets(0, 0, 0, 0),
   'verticalSafeArea': _insets(0, 0, 0, 0),
   'effectiveCornerRadii': _radii(0, 0, 0, 0),
+  'occlusionGeometry': null,
 };
 
 Map<String, double> _insets(
@@ -198,4 +384,17 @@ Map<String, double> _radii(
   'topRight': topRight,
   'bottomLeft': bottomLeft,
   'bottomRight': bottomRight,
+};
+
+Map<String, Object> _occlusionPayload({List<Object>? regions}) => {
+  'viewBounds': _rect(0, 0, 800, 600),
+  'activeOcclusionRegions': regions ?? [_rect(720, 0, 80, 100)],
+  'hasVerticalSystemBar': true,
+};
+
+Map<String, double> _rect(double x, double y, double width, double height) => {
+  'x': x,
+  'y': y,
+  'width': width,
+  'height': height,
 };

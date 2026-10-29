@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
+import 'occlusion_geometry.dart';
+
 /// Layout margins and safe-area regions reported for the current Flutter view.
 ///
 /// Adapted margins and safe areas are raw values from UIKit. The avoidance
@@ -22,6 +24,7 @@ final class IosWindowControlLayoutData {
     this.horizontalSafeArea = EdgeInsets.zero,
     this.verticalSafeArea = EdgeInsets.zero,
     this.effectiveCornerRadii = BorderRadius.zero,
+    this.occlusionGeometry,
   });
 
   /// A snapshot for unsupported platforms.
@@ -92,6 +95,32 @@ final class IosWindowControlLayoutData {
   /// corner radii do not flip in right-to-left layouts.
   final BorderRadius effectiveCornerRadii;
 
+  /// Active system occlusions in the current Flutter view, when available.
+  ///
+  /// Null means unsupported, not yet queried, invalidated, or unavailable.
+  /// A non-null geometry with an empty region list is a valid empty result.
+  /// Requires the iOS 27.1 APIs at runtime, independently of [isAvailable].
+  final IosOcclusionGeometry? occlusionGeometry;
+
+  /// Returns this snapshot with only its occlusion geometry removed.
+  ///
+  /// Existing margins, safe areas, corners, and device state are retained.
+  IosWindowControlLayoutData withoutOcclusionGeometry() =>
+      occlusionGeometry == null
+      ? this
+      : IosWindowControlLayoutData(
+          isAvailable: isAvailable,
+          isPad: isPad,
+          isFullScreen: isFullScreen,
+          baseMargins: baseMargins,
+          horizontalMargins: horizontalMargins,
+          verticalMargins: verticalMargins,
+          baseSafeArea: baseSafeArea,
+          horizontalSafeArea: horizontalSafeArea,
+          verticalSafeArea: verticalSafeArea,
+          effectiveCornerRadii: effectiveCornerRadii,
+        );
+
   /// Extra physical insets needed for horizontal corner adaptation.
   EdgeInsets get horizontalAvoidance =>
       _difference(horizontalMargins, baseMargins);
@@ -151,7 +180,8 @@ final class IosWindowControlLayoutData {
           other.baseSafeArea == baseSafeArea &&
           other.horizontalSafeArea == horizontalSafeArea &&
           other.verticalSafeArea == verticalSafeArea &&
-          other.effectiveCornerRadii == effectiveCornerRadii;
+          other.effectiveCornerRadii == effectiveCornerRadii &&
+          other.occlusionGeometry == occlusionGeometry;
 
   @override
   int get hashCode => Object.hash(
@@ -165,6 +195,7 @@ final class IosWindowControlLayoutData {
     horizontalSafeArea,
     verticalSafeArea,
     effectiveCornerRadii,
+    occlusionGeometry,
   );
 
   @override
@@ -179,5 +210,6 @@ final class IosWindowControlLayoutData {
       'baseSafeArea: $baseSafeArea, '
       'horizontalSafeArea: $horizontalSafeArea, '
       'verticalSafeArea: $verticalSafeArea, '
-      'effectiveCornerRadii: $effectiveCornerRadii)';
+      'effectiveCornerRadii: $effectiveCornerRadii, '
+      'occlusionGeometry: $occlusionGeometry)';
 }

@@ -30,22 +30,24 @@ struct PhysicalInsetsPayload {
         _ insets: NSDirectionalEdgeInsets,
         layoutDirection: UIUserInterfaceLayoutDirection
     ) {
-        let left = switch layoutDirection {
-        case .leftToRight:
-            insets.leading
-        case .rightToLeft:
-            insets.trailing
-        @unknown default:
-            insets.leading
-        }
-        let right = switch layoutDirection {
-        case .leftToRight:
-            insets.trailing
-        case .rightToLeft:
-            insets.leading
-        @unknown default:
-            insets.trailing
-        }
+        let left =
+            switch layoutDirection {
+            case .leftToRight:
+                insets.leading
+            case .rightToLeft:
+                insets.trailing
+            @unknown default:
+                insets.leading
+            }
+        let right =
+            switch layoutDirection {
+            case .leftToRight:
+                insets.trailing
+            case .rightToLeft:
+                insets.leading
+            @unknown default:
+                insets.trailing
+            }
         self.init(
             left: Double(left),
             top: Double(insets.top),
@@ -91,7 +93,7 @@ struct CornerRadiiPayload {
 /// Versioned payload containing only StandardMessageCodec-compatible values.
 /// Keep this structure synchronized with Dart's `LayoutPayload`.
 struct LayoutPayload {
-    static let schemaVersion = 5
+    static let schemaVersion = 6
 
     static func layoutRegionsUnavailable(
         isPad: Bool,
@@ -121,6 +123,7 @@ struct LayoutPayload {
     let horizontalSafeArea: PhysicalInsetsPayload
     let verticalSafeArea: PhysicalInsetsPayload
     let effectiveCornerRadii: CornerRadiiPayload
+    var occlusionGeometry: OcclusionGeometryPayload? = nil
 
     func encode() -> [String: Any] {
         [
@@ -135,6 +138,34 @@ struct LayoutPayload {
             "horizontalSafeArea": horizontalSafeArea.encode(),
             "verticalSafeArea": verticalSafeArea.encode(),
             "effectiveCornerRadii": effectiveCornerRadii.encode(),
+            "occlusionGeometry": occlusionGeometry?.encode() ?? NSNull(),
+        ]
+    }
+}
+
+/// Reserved-region frames are physical Flutter root-view coordinates. UIKit
+/// already includes interactive margins in each frame; never add them again.
+struct OcclusionGeometryPayload: Equatable {
+    let viewBounds: CGRect
+    let activeOcclusionRegions: [CGRect]
+    let hasVerticalSystemBar: Bool
+    var verticalBarLayoutFrame: CGRect? = nil
+
+    func encode() -> [String: Any] {
+        [
+            "viewBounds": Self.encodeRect(viewBounds),
+            "activeOcclusionRegions": activeOcclusionRegions.map(Self.encodeRect),
+            "hasVerticalSystemBar": hasVerticalSystemBar,
+            "verticalBarLayoutFrame": verticalBarLayoutFrame.map(Self.encodeRect) ?? NSNull(),
+        ]
+    }
+
+    private static func encodeRect(_ rect: CGRect) -> [String: Double] {
+        [
+            "x": Double(rect.origin.x),
+            "y": Double(rect.origin.y),
+            "width": Double(rect.size.width),
+            "height": Double(rect.size.height),
         ]
     }
 }

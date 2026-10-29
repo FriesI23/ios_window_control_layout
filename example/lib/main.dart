@@ -40,6 +40,7 @@ class _ExamplePageState extends State<_ExamplePage> {
   _AppBarStyle _style = _AppBarStyle.cupertino;
   bool _applyWindowControlLayout = true;
   bool _useRtl = false;
+  bool _showOcclusions = false;
 
   @override
   Widget build(BuildContext context) {
@@ -58,12 +59,21 @@ class _ExamplePageState extends State<_ExamplePage> {
     return Directionality(
       textDirection: _useRtl ? TextDirection.rtl : TextDirection.ltr,
       child: Builder(
-        builder: (context) => _buildPage(
-          context,
-          data: data,
-          flutterSafeArea: flutterSafeArea,
-          avoidance: avoidance,
-          bottomControlPadding: bottomControlPadding,
+        builder: (context) => Stack(
+          fit: StackFit.expand,
+          children: [
+            _buildPage(
+              context,
+              data: data,
+              flutterSafeArea: flutterSafeArea,
+              avoidance: avoidance,
+              bottomControlPadding: bottomControlPadding,
+            ),
+            if (_showOcclusions)
+              Positioned.fill(
+                child: _OcclusionDiagnostics(geometry: data.occlusionGeometry),
+              ),
+          ],
         ),
       ),
     );
@@ -103,6 +113,17 @@ class _ExamplePageState extends State<_ExamplePage> {
                     ),
                     onPressed: () => _selectStyle(_AppBarStyle.cupertino),
                     child: const Text('Cupertino AppBar'),
+                  ),
+                  MenuItemButton(
+                    key: const ValueKey('toggle-occlusion-diagnostics'),
+                    leadingIcon: const Icon(Icons.crop_free),
+                    onPressed: () =>
+                        setState(() => _showOcclusions = !_showOcclusions),
+                    child: Text(
+                      _showOcclusions
+                          ? 'Hide occlusion diagnostics'
+                          : 'Show occlusion diagnostics',
+                    ),
                   ),
                 ],
                 builder: (context, controller, child) => FilledButton.tonalIcon(
@@ -393,4 +414,115 @@ class _InsetsPreview extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Diagnostic paint only: the example's existing safe areas remain unchanged.
+class _OcclusionDiagnostics extends StatelessWidget {
+  const _OcclusionDiagnostics({required this.geometry});
+
+  final IosOcclusionGeometry? geometry;
+
+  @override
+  Widget build(BuildContext context) {
+    final geometry = this.geometry;
+    final bar = geometry?.verticalBarLayoutFrame;
+    final status = geometry == null
+        ? 'Occlusion geometry unavailable'
+        : [
+            'View bounds: ${geometry.viewBounds}',
+            'Active regions: ${geometry.activeOcclusionRegions.length}; '
+                'hasVerticalSystemBar: ${geometry.hasVerticalSystemBar}',
+            'Recommended bar: ${bar ?? 'unavailable'}',
+            if (bar != null)
+              'Bar center x: ${bar.center.dx.toStringAsFixed(1)}',
+            'Cyan: view; red: occlusion; blue: bar and center',
+            'A recommended bar is not an occlusion or Wi-Fi frame',
+          ].join('\n');
+    return IgnorePointer(
+      key: const ValueKey('occlusion-diagnostics-overlay'),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          CustomPaint(
+            key: const ValueKey('occlusion-regions-paint'),
+            painter: _OcclusionPainter(geometry),
+          ),
+          Align(
+            alignment: Alignment.topCenter,
+            child: SafeArea(
+              child: Container(
+                margin: const EdgeInsets.all(4),
+                padding: const EdgeInsets.all(6),
+                color: Colors.white.withValues(alpha: 0.88),
+                child: Text(
+                  status,
+                  key: const ValueKey('occlusion-diagnostics-status'),
+                  textDirection: TextDirection.ltr,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    inherit: false,
+                    color: Colors.black,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OcclusionPainter extends CustomPainter {
+  const _OcclusionPainter(this.geometry);
+
+  final IosOcclusionGeometry? geometry;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final geometry = this.geometry;
+    if (geometry == null) return;
+    canvas.drawRect(
+      geometry.viewBounds.deflate(1),
+      Paint()
+        ..color = Colors.cyan
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
+    );
+    final bar = geometry.verticalBarLayoutFrame;
+    if (bar != null) {
+      canvas.drawRect(
+        bar,
+        Paint()
+          ..color = Colors.blue
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2,
+      );
+      canvas.drawLine(
+        Offset(bar.center.dx, bar.top),
+        Offset(bar.center.dx, bar.bottom),
+        Paint()
+          ..color = Colors.blue
+          ..strokeWidth = 1,
+      );
+    }
+    for (final region in geometry.activeOcclusionRegions) {
+      canvas.drawRect(
+        region,
+        Paint()..color = Colors.red.withValues(alpha: 0.25),
+      );
+      canvas.drawRect(
+        region,
+        Paint()
+          ..color = Colors.red
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_OcclusionPainter oldDelegate) =>
+      geometry != oldDelegate.geometry;
 }

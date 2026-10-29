@@ -4,6 +4,7 @@ import UIKit
 extension IosWindowControlLayoutPlugin {
     func handleQueryLayout(result: FlutterResult) {
         guard let view = registrar?.viewController?.viewIfLoaded else {
+            synchronizeOcclusionObserver(with: nil)
             result(
                 FlutterError(
                     code: "view_unavailable",
@@ -14,6 +15,7 @@ extension IosWindowControlLayoutPlugin {
             return
         }
         guard let windowScene = view.window?.windowScene else {
+            synchronizeOcclusionObserver(with: nil)
             result(
                 FlutterError(
                     code: "window_scene_unavailable",
@@ -24,7 +26,7 @@ extension IosWindowControlLayoutPlugin {
             return
         }
 
-        view.layoutIfNeeded()
+        synchronizeOcclusionObserver(with: view)
         let sceneCoordinateSpace: UICoordinateSpace
         if #available(iOS 26.0, *) {
             sceneCoordinateSpace = windowScene.effectiveGeometry.coordinateSpace
@@ -52,7 +54,7 @@ extension IosWindowControlLayoutPlugin {
             return
         }
 
-        let payload = Self.queryLayout(
+        var payload = Self.queryLayout(
             isPad: isPad,
             isFullScreen: isFullScreen,
             layoutDirection: view.effectiveUserInterfaceLayoutDirection,
@@ -77,6 +79,7 @@ extension IosWindowControlLayoutPlugin {
                 bottomRight: Double(view.effectiveRadius(corner: .bottomRight))
             )
         )
+        payload.occlusionGeometry = occlusionGeometry
         result(payload.encode())
     }
 

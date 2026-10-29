@@ -1,19 +1,44 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ios_window_control_layout/ios_window_control_layout.dart';
 import 'package:ios_window_control_layout/src/platform.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-final class _FakePlatform extends IosWindowControlLayoutPlatform
-    with MockPlatformInterfaceMixin {
+final class _FakePlatform
+    with MockPlatformInterfaceMixin
+    implements IosWindowControlLayoutPlatform {
   _FakePlatform(this.queryCallback);
 
   final Future<IosWindowControlLayoutData> Function() queryCallback;
 
   @override
+  Stream<void> get occlusionChanges => const Stream<void>.empty();
+
+  @override
   Future<IosWindowControlLayoutData> query() => queryCallback();
+}
+
+final class _InheritedPlatform extends IosWindowControlLayoutPlatform {
+  _InheritedPlatform() : super.base();
+
+  @override
+  Stream<void> get occlusionChanges => const Stream<void>.empty();
+
+  @override
+  Future<IosWindowControlLayoutData> query() async =>
+      IosWindowControlLayoutData.zero;
+}
+
+final class _UnverifiedPlatform implements IosWindowControlLayoutPlatform {
+  @override
+  Stream<void> get occlusionChanges => const Stream<void>.empty();
+
+  @override
+  Future<IosWindowControlLayoutData> query() async =>
+      IosWindowControlLayoutData.zero;
 }
 
 void main() {
@@ -25,8 +50,30 @@ void main() {
     IosWindowControlLayoutPlatform.instance = initialPlatform;
   });
 
-  test('$MethodChannelIosWindowControlLayout is the default instance', () {
-    expect(initialPlatform, isA<MethodChannelIosWindowControlLayout>());
+  test('platform factory returns zero outside iOS', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final platform = IosWindowControlLayoutPlatform();
+    expect(await platform.query(), IosWindowControlLayoutData.zero);
+    expect(await platform.occlusionChanges.toList(), isEmpty);
+  });
+
+  test('platform instance accepts an inherited backend', () {
+    final platform = _InheritedPlatform();
+
+    IosWindowControlLayoutPlatform.instance = platform;
+
+    expect(IosWindowControlLayoutPlatform.instance, same(platform));
+  });
+
+  test('platform instance rejects an unverified implementation', () {
+    final previous = IosWindowControlLayoutPlatform.instance;
+
+    expect(
+      () => IosWindowControlLayoutPlatform.instance = _UnverifiedPlatform(),
+      throwsA(isA<AssertionError>()),
+    );
+    expect(IosWindowControlLayoutPlatform.instance, same(previous));
   });
 
   test('avoidance is the non-negative adapted margin difference', () {

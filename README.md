@@ -25,11 +25,12 @@ EN / [中文](README_zh.md)
 
 ## Platform support
 
-| Platform             | Behavior                                                              |
-| -------------------- | --------------------------------------------------------------------- |
-| iOS/iPadOS 26+       | Queries `UIView.LayoutRegion` from the current Flutter view.          |
-| Earlier iOS versions | Returns `IosWindowControlLayoutData.zero`.                            |
-| Other platforms      | Returns `IosWindowControlLayoutData.zero` without invoking a channel. |
+| Platform | Behavior |
+| --- | --- |
+| iOS/iPadOS 27.1+ | Also reports active system occlusions when available. |
+| iOS/iPadOS 26+ | Queries `UIView.LayoutRegion` from the current Flutter view. |
+| Earlier iOS versions | Keeps device/window state; unavailable regions are zero and occlusion geometry is `null`. |
+| Other platforms | Returns `IosWindowControlLayoutData.zero` without invoking a channel. |
 
 ## Getting started
 
@@ -67,8 +68,8 @@ controls, select the matching physical side explicitly.
 
 `of` and `maybeOf` establish an inherited dependency. `read` and `maybeRead`
 perform a non-listening lookup. The layout refreshes after its first frame, on
-window metric changes, and when the application resumes. An application can
-also request a refresh explicitly:
+window metric changes, native occlusion changes, and when the application
+resumes. An application can also request a refresh explicitly:
 
 ```dart
 await IosWindowControlLayout.refresh(context);
@@ -112,6 +113,33 @@ All values belong to one immutable snapshot and refresh together. On iOS
 versions before 26, `isPad` and `isFullScreen` still describe the current view
 and scene, while the unavailable layout-region and corner values are zero.
 Other platforms return the zero snapshot.
+
+### Occlusion geometry
+
+On iOS/iPadOS 27.1+, `occlusionGeometry` reports active system occlusions when
+available:
+
+```dart
+final geometry = IosWindowControlLayout.of(context).occlusionGeometry;
+```
+
+| Property | Purpose |
+| --- | --- |
+| `viewBounds` | Bounds of the current Flutter view. |
+| `activeOcclusionRegions` | Active system regions to avoid. |
+| `hasVerticalSystemBar` | UIKit's vertical system-bar preference; does not indicate current visibility. |
+| `verticalBarLayoutFrame` | Optional recommended layout region for aligning controls, separate from active occlusions. |
+
+Rectangles use Flutter-view logical coordinates and physical edges, without RTL
+mirroring. Regions may extend beyond the view; convert them to local coordinates
+before checking intersections with a control's full interactive bounds.
+
+A `null` snapshot means no usable geometry is available. A non-null snapshot with
+an empty region list means no active occlusions. This is independent of
+`isAvailable`, which describes the layout-region capability.
+
+Use these regions alongside your existing Safe Area protections. See the
+[example guide](example/README.md) for the diagnostic overlay.
 
 ### Migrating from 0.4.x
 

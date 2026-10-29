@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Add active system occlusion geometry and optional vertical-bar layout guidance
+  on iOS/iPadOS 27.1+.
+- Refresh occlusion data automatically as the native layout changes.
+- Add an occlusion diagnostic overlay to the example.
+
 ## 0.5.0
 
 > **Breaking change:** Layout margins, safe areas, and avoidance values now use

@@ -27,8 +27,9 @@
 
 | 平台 | 行为 |
 | --- | --- |
+| iOS/iPadOS 27.1+ | 可用时额外提供活动系统遮挡区域。 |
 | iOS/iPadOS 26+ | 从当前 Flutter view 查询 `UIView.LayoutRegion`。 |
-| 更早的 iOS 版本 | 返回 `IosWindowControlLayoutData.zero`。 |
+| 更早的 iOS 版本 | 保留设备和窗口状态，不可用的布局区域为零，遮挡几何为 `null`。 |
 | 其他平台 | 不调用平台通道，直接返回 `IosWindowControlLayoutData.zero`。 |
 
 ## 快速开始
@@ -65,7 +66,7 @@ final windowCorners = layout.effectiveCornerRadii;
 逻辑 leading 或 trailing 控件时，需要显式选择对应的物理侧。
 
 `of` 和 `maybeOf` 会建立 inherited dependency；`read` 和 `maybeRead`
-只读取当前值。首次 frame 完成后、窗口尺寸变化以及应用恢复时，布局会自动刷新。
+只读取当前值。首次 frame 完成后、窗口尺寸或原生遮挡变化以及应用恢复时，布局会自动刷新。
 也可以主动请求刷新：
 
 ```dart
@@ -108,6 +109,29 @@ Margin 类数值更适合普通内容，safe-area 类数值更适合靠近设备
 所有数值都属于同一份不可变布局快照，并会一起刷新。iOS 26 以下仍会
 返回当前 view 的 `isPad` 与 scene 的 `isFullScreen`，不可用的布局区域和
 圆角数值为零；其他平台返回完整的零值快照。
+
+### 遮挡几何
+
+在 iOS/iPadOS 27.1+ 上，`occlusionGeometry` 可提供当前活动的系统遮挡区域：
+
+```dart
+final geometry = IosWindowControlLayout.of(context).occlusionGeometry;
+```
+
+| 属性 | 用途 |
+| --- | --- |
+| `viewBounds` | 当前 Flutter view 的边界。 |
+| `activeOcclusionRegions` | 需要避让的活动系统区域。 |
+| `hasVerticalSystemBar` | UIKit 的竖向系统栏偏好，不代表栏当前可见。 |
+| `verticalBarLayoutFrame` | 可选的控件对齐参考区域，不是额外遮挡。 |
+
+矩形使用 Flutter view 的逻辑坐标与物理方向，不随 RTL 镜像。区域可能越出 view；
+使用时先转换到控件局部坐标，再与完整交互区域判断交集。
+
+`null` 表示没有可用几何；非 `null` 且区域列表为空表示没有活动遮挡。
+这与描述布局区域能力的 `isAvailable` 相互独立。
+
+使用时仍应保留原有 Safe Area 保护。诊断层的使用方式见[示例说明](example/README.md)。
 
 ### 从 0.4.x 迁移
 
