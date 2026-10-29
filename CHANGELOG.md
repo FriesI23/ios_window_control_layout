@@ -1,10 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0
+
+> **Breaking change:** Wire schema v6 strictly rejects schema v5 payloads.
+> Rebuild the iOS app when upgrading so the Dart and native plugin versions
+> stay in sync.
 
 - Add active system occlusion geometry and optional vertical-bar layout guidance
   on iOS/iPadOS 27.1+.
 - Refresh occlusion data automatically as the native layout changes.
+- Clear stale occlusion data when the Flutter view changes or a query fails.
 - Add an occlusion diagnostic overlay to the example.
 
 ## 0.5.0
